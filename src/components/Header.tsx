@@ -12,14 +12,6 @@ export function BrandLogo({ site, className = '' }: { site: SiteSettings; classN
 
   useEffect(() => {
     setRatio(null);
-    if (!site.logo_url) return;
-    const img = new window.Image();
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        setRatio(img.naturalWidth / img.naturalHeight);
-      }
-    };
-    img.src = site.logo_url;
   }, [site.logo_url]);
 
   if (site.logo_url) {
@@ -33,6 +25,7 @@ export function BrandLogo({ site, className = '' }: { site: SiteSettings; classN
           alt={site.institute_name || 'Logo'}
           fit="contain"
           eager
+          onImageLoad={(w, h) => setRatio(w / h)}
           className="h-full w-full"
         />
       </span>

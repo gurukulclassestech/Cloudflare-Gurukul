@@ -7,6 +7,7 @@ interface SafeImageProps {
   className?: string;
   eager?: boolean;
   fit?: 'cover' | 'contain';
+  onImageLoad?: (naturalWidth: number, naturalHeight: number) => void;
 }
 
 function isSafeImageUrl(url?: string): string {
@@ -21,17 +22,26 @@ function isSafeImageUrl(url?: string): string {
   return '';
 }
 
+function getLocalWebpSource(safeSrc: string): string | null {
+  const match = safeSrc.match(/^(\/assets\/gurukul\/(?!favicon\.)[a-zA-Z0-9_-]+)\.png(?:\?.*)?$/i);
+  return match ? `${match[1]}.webp` : null;
+}
+
 export function SafeImage({
   src,
   alt,
   className = '',
   eager = false,
   fit = 'cover',
+  onImageLoad,
 }: SafeImageProps) {
   const safeSrc = isSafeImageUrl(src);
+  const webpSrc = getLocalWebpSource(safeSrc);
+  const [usePngFallback, setUsePngFallback] = useState(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    setUsePngFallback(false);
     setFailed(false);
   }, [safeSrc]);
 
@@ -50,13 +60,29 @@ export function SafeImage({
     );
   }
 
+  const activeSrc = !usePngFallback && webpSrc ? webpSrc : safeSrc;
+
   return (
     <img
-      src={safeSrc}
+      src={activeSrc}
       alt={alt}
       loading={eager ? 'eager' : 'lazy'}
+      decoding={eager ? 'sync' : 'async'}
+      fetchPriority={eager ? 'high' : undefined}
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
+      onLoad={(e) => {
+        const el = e.currentTarget;
+        if (onImageLoad && el.naturalWidth && el.naturalHeight) {
+          onImageLoad(el.naturalWidth, el.naturalHeight);
+        }
+      }}
+      onError={() => {
+        if (webpSrc && !usePngFallback) {
+          setUsePngFallback(true);
+        } else {
+          setFailed(true);
+        }
+      }}
       className={`${fit === 'contain' ? 'object-contain' : 'object-cover'} ${className}`}
     />
   );

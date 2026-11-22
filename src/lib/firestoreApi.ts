@@ -220,25 +220,146 @@ export interface EnquiryPayload {
   source?: string;
 }
 
+function sanitizeFormText(input: unknown, maxLen: number): string {
+  if (typeof input !== 'string') return '';
+  return input.replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, maxLen);
+}
+
+async function sha256HexClient(input: string): Promise<string> {
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    const bytes = new TextEncoder().encode(input);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h).toString(16).padStart(24, '0');
+}
+
+interface ValidatedCheck {
+  ok: boolean;
+  duplicate?: boolean;
+  errors?: Record<string, string>;
+  message?: string;
+  docId?: string;
+  dedupKey?: string;
+  sanitized?: Record<string, string>;
+}
+
+async function validateEnquiryLocally(
+  payload: Record<string, unknown>,
+  kind: 'enquiry' | 'admission'
+): Promise<ValidatedCheck> {
+  const student_name = sanitizeFormText(payload.student_name, 120);
+  const parent_name = sanitizeFormText(payload.parent_name, 120);
+  const phone = sanitizeFormText(payload.phone, 20);
+  const email = sanitizeFormText(payload.email, 120);
+  const class_level = sanitizeFormText(payload.class_level, 80);
+  const course_name = sanitizeFormText(payload.course_name, 160);
+  const preferred_batch = sanitizeFormText(payload.preferred_batch, 80);
+  const school = sanitizeFormText(payload.school, 160);
+  const address = sanitizeFormText(payload.address, 300);
+  const message = sanitizeFormText(payload.message, 2000);
+  const source = sanitizeFormText(payload.source, 60) || 'website';
+
+  const errors: Record<string, string> = {};
+  if (student_name.length < 2) {
+    errors.student_name = "Please enter the student's full name.";
+  }
+  if (kind === 'admission' && parent_name.length < 2) {
+    errors.parent_name = "Please enter the parent or guardian's name.";
+  }
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 10 || digits.length > 13 || !/^[+0-9\s()-]{10,20}$/.test(phone)) {
+    errors.phone = 'Enter a valid mobile number (10–13 digits).';
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = 'Enter a valid email address.';
+  }
+  if (kind === 'admission' && !class_level) {
+    errors.class_level = 'Please select the class.';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { ok: false, errors };
+  }
+
+  const courseSlug =
+    (course_name || 'general')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40) || 'general';
+  const dateBucket = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const dedupKey = `${kind}_${digits}_${courseSlug}_${dateBucket}`;
+  const hash = (await sha256HexClient(dedupKey)).slice(0, 24);
+  const docId = `${kind === 'admission' ? 'adm' : 'enq'}_${dateBucket}_${hash}`;
+
+  return {
+    ok: true,
+    docId,
+    dedupKey,
+    sanitized: {
+      student_name,
+      parent_name,
+      phone,
+      email,
+      class_level,
+      course_name,
+      preferred_batch,
+      school,
+      address,
+      message,
+      source,
+    },
+  };
+}
+
+async function validateEnquiryWithFallback(
+  payload: Record<string, unknown>,
+  kind: 'enquiry' | 'admission'
+): Promise<ValidatedCheck> {
+  try {
+    const res = await fetch('/api/validate-enquiry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, kind }),
+    });
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const check = (await res.json().catch(() => null)) as ValidatedCheck | null;
+      if (check && (check.ok || check.errors || check.duplicate || check.message)) {
+        return check;
+      }
+    }
+  } catch {
+    // Fall back to client-side validation when /api/* is unavailable (e.g. Workers static deploy)
+  }
+  return validateEnquiryLocally(payload, kind);
+}
+
 export async function submitValidatedEnquiry(payload: EnquiryPayload): Promise<{
   ok: boolean;
   duplicate?: boolean;
   errors?: Record<string, string>;
   message?: string;
 }> {
-  const res = await fetch('/api/validate-enquiry', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...payload, kind: 'enquiry' }),
-  });
-  const check = await res.json().catch(() => null);
+  const check = await validateEnquiryWithFallback(
+    payload as unknown as Record<string, unknown>,
+    'enquiry'
+  );
 
-  if (!res.ok || !check?.docId || !check?.sanitized) {
+  if (!check.ok || !check.docId || !check.sanitized) {
     return {
       ok: false,
-      duplicate: Boolean(check?.duplicate),
-      errors: check?.errors,
-      message: check?.message || 'Could not submit enquiry right now. Please try again.',
+      duplicate: Boolean(check.duplicate),
+      errors: check.errors,
+      message: check.message || 'Please check the form fields and try again.',
     };
   }
 
@@ -300,19 +421,17 @@ export async function submitValidatedAdmission(payload: AdmissionPayload): Promi
   message?: string;
   referenceCode?: string;
 }> {
-  const res = await fetch('/api/validate-enquiry', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...payload, kind: 'admission' }),
-  });
-  const check = await res.json().catch(() => null);
+  const check = await validateEnquiryWithFallback(
+    payload as unknown as Record<string, unknown>,
+    'admission'
+  );
 
-  if (!res.ok || !check?.docId || !check?.sanitized) {
+  if (!check.ok || !check.docId || !check.sanitized) {
     return {
       ok: false,
-      duplicate: Boolean(check?.duplicate),
-      errors: check?.errors,
-      message: check?.message || 'Could not submit admission application right now. Please try again.',
+      duplicate: Boolean(check.duplicate),
+      errors: check.errors,
+      message: check.message || 'Please check the application fields and try again.',
     };
   }
 

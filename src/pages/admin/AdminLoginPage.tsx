@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Check, Copy, ExternalLink, Loader2, ShieldCheck } from 'lucide-react';
+import firebaseConfig from '../../../firebase-applet-config.json';
 import { useAuth } from '../../context/AuthContext';
 import { useSite } from '../../context/SiteContext';
 import { usePageSeo } from '../../lib/seo';
@@ -11,8 +12,24 @@ export function AdminLoginPage() {
   const { site } = useSite();
   const navigate = useNavigate();
   const [signingIn, setSigningIn] = useState(false);
+  const [copiedHost, setCopiedHost] = useState(false);
 
   usePageSeo('login', 'Admin Sign In', `Sign in to manage ${site.institute_name}.`);
+
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isUnauthorizedDomain = Boolean(authError && authError.includes('not yet authorized'));
+  const authorizedDomainsUrl = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/settings`;
+
+  const handleCopyHost = async () => {
+    if (!currentHost || !navigator?.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(currentHost);
+      setCopiedHost(true);
+      window.setTimeout(() => setCopiedHost(false), 2000);
+    } catch {
+      // Clipboard blocked in some browser contexts
+    }
+  };
 
   useEffect(() => {
     if (!loading && user && isAdmin) {
@@ -54,7 +71,32 @@ export function AdminLoginPage() {
             role="alert"
             className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs leading-relaxed text-red-700"
           >
-            {authError}
+            <p>{authError}</p>
+            {isUnauthorizedDomain && currentHost && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-red-200 pt-2.5">
+                <button
+                  type="button"
+                  onClick={handleCopyHost}
+                  className="inline-flex items-center gap-1.5 rounded border border-red-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-red-800 hover:bg-red-100"
+                >
+                  {copiedHost ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  <span>{copiedHost ? 'Copied domain' : `Copy ${currentHost}`}</span>
+                </button>
+                <a
+                  href={authorizedDomainsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded bg-red-700 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-red-800"
+                >
+                  <span>Open Firebase Authorized Domains</span>
+                  <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                </a>
+              </div>
+            )}
           </div>
         )}
 

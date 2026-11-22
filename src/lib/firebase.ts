@@ -162,22 +162,82 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
+ * Optimizes large admin-uploaded images (> 220 KB or > 1600 px wide) into a lightweight
+ * WebP File before storing in Firebase Storage so visitor page loads stay fast.
+ */
+async function optimizeImageForStorage(file: File): Promise<File> {
+  if (file.size <= 220 * 1024 || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+        const maxSide = 1600;
+        if (width > maxSide || height > maxSide) {
+          const ratio = Math.min(maxSide / width, maxSide / height);
+          width = Math.max(1, Math.round(width * ratio));
+          height = Math.max(1, Math.round(height * ratio));
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl);
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(objectUrl);
+            if (blob && blob.size > 0 && blob.size < file.size) {
+              const base = file.name.replace(/\.[^.]+$/, '') || 'image';
+              resolve(new File([blob], `${base}.webp`, { type: 'image/webp' }));
+            } else {
+              resolve(file);
+            }
+          },
+          'image/webp',
+          0.84
+        );
+      } catch {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+    img.src = objectUrl;
+  });
+}
+
+/**
  * Uploads an image to Firebase Storage first; if Storage is unavailable/blocked
- * (including on Vercel serverless deployments), compresses and delegates to /api/upload-image
- * (disk locally, validated inline URL on Vercel) or returns the compact inline URL.
+ * (including on serverless deployments), compresses and delegates to /api/upload-image
+ * (disk locally, validated inline URL on serverless hosts) or returns the compact inline URL.
  */
 export async function uploadMediaFile(file: File, folder = 'gallery'): Promise<string> {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const optimized = await optimizeImageForStorage(file);
+  const safeName = optimized.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const storagePath = `gurukul/${folder}/${Date.now()}_${safeName}`;
   try {
     const storageRef = ref(storage, storagePath);
     const snapshot = await withTimeout(
-      uploadBytes(storageRef, file, { contentType: file.type }),
+      uploadBytes(storageRef, optimized, { contentType: optimized.type }),
       6500
     );
     return await withTimeout(getDownloadURL(snapshot.ref), 5000);
   } catch {
-    const compactDataUrl = await compressImageForInlineFallback(file, 190000);
+    const compactDataUrl = await compressImageForInlineFallback(optimized, 190000);
     try {
       const res = await fetch('/api/upload-image', {
         method: 'POST',
