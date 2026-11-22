@@ -1,0 +1,12 @@
+node_modules/
+build/
+dist/
+coverage/
+.vercel/
+.aistudio/
+public/assets/aistudio/
+uploads/
+.DS_Store
+*.log
+.env*
+!.env.example
