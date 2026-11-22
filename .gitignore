@@ -10,3 +10,4 @@ uploads/
 *.log
 .env*
 !.env.example
+bun.lock
