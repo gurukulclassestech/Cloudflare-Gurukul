@@ -201,6 +201,7 @@ export interface StudentResult {
   student_name: string;
   achievement_title: string;
   score: string;
+  category?: string;
   class_level?: string;
   academic_year: string;
   photo_url?: string;

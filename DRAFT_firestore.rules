@@ -235,10 +235,11 @@ service cloud.firestore {
 
     function isValidResult(data) {
       return data.keys().hasAll(['student_name', 'achievement_title', 'score', 'is_published', 'display_order']) &&
-        data.keys().hasOnly(['student_name', 'achievement_title', 'score', 'class_level', 'academic_year', 'photo_url', 'document_url', 'display_order', 'is_featured', 'is_published']) &&
+        data.keys().hasOnly(['student_name', 'achievement_title', 'score', 'category', 'class_level', 'academic_year', 'photo_url', 'document_url', 'display_order', 'is_featured', 'is_published']) &&
         reqStr(data, 'student_name', 2, 120) &&
         reqStr(data, 'achievement_title', 2, 180) &&
         reqStr(data, 'score', 1, 60) &&
+        optStr(data, 'category', 80) &&
         optStr(data, 'academic_year', 30) &&
         data.is_published is bool &&
         data.display_order is number &&

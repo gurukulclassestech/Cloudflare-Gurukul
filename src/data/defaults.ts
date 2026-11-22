@@ -57,6 +57,26 @@ export const DEFAULT_COURSE_CATEGORIES = [
   'IIT-JEE & NEET Foundation Programme',
 ];
 
+export const DEFAULT_RESULT_CATEGORIES = [
+  'IIT-JEE',
+  'NEET',
+  'MHT-CET',
+  'Foundation',
+  'Board Exams',
+];
+
+export function resolveResultSection(res: Pick<StudentResult, 'category' | 'achievement_title'>): string {
+  const explicit = (res.category || '').trim();
+  if (explicit) return explicit;
+  const title = (res.achievement_title || '').toLowerCase();
+  if (title.includes('neet')) return 'NEET';
+  if (title.includes('iit') || title.includes('jee')) return 'IIT-JEE';
+  if (title.includes('cet')) return 'MHT-CET';
+  if (title.includes('foundation')) return 'Foundation';
+  if (title.includes('board') || title.includes('ssc') || title.includes('hsc')) return 'Board Exams';
+  return 'Other Achievements';
+}
+
 export const DEFAULT_COURSE_CATEGORY_DESCRIPTIONS = [
   {
     category: 'IIT-JEE & NEET Two-Year Integrated Programme',
@@ -784,6 +804,7 @@ export const DEFAULT_RESULTS: StudentResult[] = [
     student_name: 'Atharv Nandapurkar',
     achievement_title: 'IIT-JEE',
     score: 'AIR 3',
+    category: 'IIT-JEE',
     class_level: 'Class 12',
     academic_year: '2025-26',
     photo_url: SITE_IMAGES.resultPoster,

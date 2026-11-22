@@ -18,6 +18,7 @@ import {
   DEFAULT_COURSE_CATEGORIES,
   DEFAULT_COURSES,
   DEFAULT_EXAMS,
+  DEFAULT_RESULT_CATEGORIES,
   DEFAULT_RESULTS,
   DEFAULT_TESTIMONIALS,
 } from '../../data/defaults';
@@ -231,14 +232,17 @@ const MODULE_CONFIGS: Record<CrudModuleKey, ModuleConfig> = {
   results: {
     collection: 'results',
     title: 'Results & Achievements',
-    subtitle: 'Publish, reorder, edit, or remove verified student scores, ranks, and achievement posters.',
+    subtitle: 'Assign each result to an exam section (IIT-JEE, NEET, etc.) and manage 1254 × 1254 achievement posters.',
     primaryField: 'student_name',
     secondaryField: 'score',
+    filterKey: 'category',
+    filterLabel: 'All result sections',
     publishField: 'is_published',
     defaults: {
       student_name: '',
       achievement_title: '',
       score: '',
+      category: 'IIT-JEE',
       academic_year: '2025-26',
       photo_url: '',
       document_url: '',
@@ -249,8 +253,16 @@ const MODULE_CONFIGS: Record<CrudModuleKey, ModuleConfig> = {
     fields: [
       { key: 'student_name', label: 'Student name', type: 'text', required: true },
       { key: 'score', label: 'Score / Rank', type: 'text', required: true, placeholder: 'AIR 3 / 97.4%' },
-      { key: 'achievement_title', label: 'Achievement title', type: 'text', required: true, span: 2 },
+      {
+        key: 'category',
+        label: 'Result section (e.g. IIT-JEE, NEET)',
+        type: 'combobox',
+        required: true,
+        options: DEFAULT_RESULT_CATEGORIES,
+        placeholder: 'IIT-JEE, NEET, MHT-CET...',
+      },
       { key: 'academic_year', label: 'Academic year (optional)', type: 'text', placeholder: '2025-26' },
+      { key: 'achievement_title', label: 'Achievement title', type: 'text', required: true, span: 2 },
       { key: 'photo_url', label: 'Student photo / result poster (1254 × 1254 px, with consent)', type: 'image', span: 2 },
       { key: 'document_url', label: 'Certificate / Document URL (optional)', type: 'text', span: 2 },
       { key: 'display_order', label: 'Display order', type: 'number' },
@@ -730,6 +742,16 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                         />
                       </div>
                     )}
+                    {module === 'results' && Boolean(item.photo_url) && (
+                      <div className="hidden h-12 w-12 shrink-0 overflow-hidden rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--brand-surface))] sm:block">
+                        <SafeImage
+                          src={String(item.photo_url)}
+                          alt={String(item[cfg.primaryField] || 'Result')}
+                          fit="contain"
+                          className="h-full w-full"
+                        />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p
@@ -739,6 +761,11 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                         >
                           {String(item[cfg.primaryField] || 'Untitled')}
                         </p>
+                        {module === 'results' && Boolean(item.category) && (
+                          <span className="rounded-full border border-[hsl(var(--brand-navy))]/15 bg-[hsl(var(--brand-surface))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[hsl(var(--brand-navy))]">
+                            {String(item.category)}
+                          </span>
+                        )}
                         {module === 'courses' && Boolean(item.is_featured) && (
                           <span className="rounded-full bg-[#FFBE1B]/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8A5A00]">
                             Featured
@@ -763,7 +790,9 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                         )}
                       </div>
                       <p className="mt-0.5 text-xs text-[hsl(var(--muted-foreground))]">
-                        {module === 'courses' && item.category ? `${String(item.category)} · ` : ''}
+                        {(module === 'courses' || module === 'results') && item.category
+                          ? `${String(item.category)} · `
+                          : ''}
                         {String(item[cfg.secondaryField] || '')}
                         {module === 'courses' && item.duration ? ` · ${String(item.duration)}` : ''}
                         {item[cfg.secondaryField] ? ' · ' : ''}

@@ -211,6 +211,7 @@
         "student_name": { "type": "string", "minLength": 2, "maxLength": 120 },
         "achievement_title": { "type": "string", "maxLength": 180 },
         "score": { "type": "string", "maxLength": 60 },
+        "category": { "type": "string", "maxLength": 80 },
         "class_level": { "type": "string", "maxLength": 80 },
         "academic_year": { "type": "string", "maxLength": 30 },
         "photo_url": { "type": "string", "maxLength": 250000 },

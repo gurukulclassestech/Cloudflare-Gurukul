@@ -27,9 +27,11 @@ import {
   DEFAULT_BLOGS,
   DEFAULT_COURSES,
   DEFAULT_EXAMS,
+  DEFAULT_RESULT_CATEGORIES,
   DEFAULT_RESULTS,
   DEFAULT_TESTIMONIALS,
   REPRESENTATIVE_GALLERY,
+  resolveResultSection,
   SITE_IMAGES,
 } from '../data/defaults';
 import { fetchPublished } from '../lib/firestoreApi';
@@ -388,6 +390,21 @@ function AchievementsHomeSection({
   results: StudentResult[];
   loading: boolean;
 }) {
+  const [selectedSection, setSelectedSection] = useState('');
+
+  const resultSections = [...new Set(results.map((r) => resolveResultSection(r)))].sort((a, b) => {
+    const ia = DEFAULT_RESULT_CATEGORIES.indexOf(a);
+    const ib = DEFAULT_RESULT_CATEGORIES.indexOf(b);
+    if (ia !== -1 || ib !== -1) {
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    }
+    return a.localeCompare(b);
+  });
+
+  const visibleResults = selectedSection
+    ? results.filter((r) => resolveResultSection(r) === selectedSection)
+    : results;
+
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--brand-navy))] py-14 text-white sm:py-20">
       <div
@@ -433,6 +450,36 @@ function AchievementsHomeSection({
           </div>
         )}
 
+        {!loading && resultSections.length > 1 && (
+          <div className="mt-8 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedSection('')}
+              className={`rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition ${
+                selectedSection === ''
+                  ? 'border-[#FFBE1B] bg-[#FFBE1B] text-[#122B5C]'
+                  : 'border-white/20 bg-white/8 text-white hover:bg-white/15'
+              }`}
+            >
+              All Sections
+            </button>
+            {resultSections.map((sec) => (
+              <button
+                key={sec}
+                type="button"
+                onClick={() => setSelectedSection(sec)}
+                className={`rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition ${
+                  selectedSection === sec
+                    ? 'border-[#FFBE1B] bg-[#FFBE1B] text-[#122B5C]'
+                    : 'border-white/20 bg-white/8 text-white hover:bg-white/15'
+                }`}
+              >
+                {sec}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="mt-9">
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -440,7 +487,7 @@ function AchievementsHomeSection({
                 <div key={i} className="h-32 animate-pulse rounded-xl bg-white/10" />
               ))}
             </div>
-          ) : results.length === 0 ? (
+          ) : visibleResults.length === 0 ? (
             <div className="rounded-xl border border-white/15 bg-white/5 p-6 text-sm text-white/80">
               <div className="flex items-start gap-3">
                 <Award className="mt-0.5 h-5 w-5 shrink-0 text-[#FFBE1B]" aria-hidden="true" />
@@ -452,7 +499,7 @@ function AchievementsHomeSection({
             </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {results.slice(0, 4).map((res) => (
+              {visibleResults.slice(0, 6).map((res) => (
                 <Link
                   key={res.id}
                   to="/results"
@@ -469,7 +516,12 @@ function AchievementsHomeSection({
                     </div>
                   )}
                   <div className="p-5">
-                    <p className="display-face text-3xl text-[#FFBE1B] tabular-nums">{res.score}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="display-face text-3xl text-[#FFBE1B] tabular-nums">{res.score}</p>
+                      <span className="rounded-full border border-[#FFBE1B]/40 bg-[#FFBE1B]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FFBE1B]">
+                        {resolveResultSection(res)}
+                      </span>
+                    </div>
                     <h3 className="mt-2 text-base font-bold text-white">{res.student_name}</h3>
                     <p className="mt-1 text-xs text-white/80">{res.achievement_title}</p>
                     {res.academic_year && (
