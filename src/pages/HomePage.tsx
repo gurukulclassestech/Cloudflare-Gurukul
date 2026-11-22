@@ -456,14 +456,15 @@ function AchievementsHomeSection({
                 <Link
                   key={res.id}
                   to="/results"
-                  className="group overflow-hidden rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xs transition hover:border-[#FFBE1B]/50 hover:bg-white/12"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xs transition hover:border-[#FFBE1B]/50 hover:bg-white/12"
                 >
                   {res.photo_url && (
-                    <div className="h-52 overflow-hidden bg-white/5">
+                    <div className="aspect-square w-full shrink-0 overflow-hidden bg-white/5">
                       <SafeImage
                         src={res.photo_url}
                         alt={res.student_name}
-                        className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
+                        fit="contain"
+                        className="h-full w-full"
                       />
                     </div>
                   )}
@@ -471,9 +472,9 @@ function AchievementsHomeSection({
                     <p className="display-face text-3xl text-[#FFBE1B] tabular-nums">{res.score}</p>
                     <h3 className="mt-2 text-base font-bold text-white">{res.student_name}</h3>
                     <p className="mt-1 text-xs text-white/80">{res.achievement_title}</p>
-                    {(res.class_level || res.academic_year) && (
+                    {res.academic_year && (
                       <p className="mt-3 text-xs text-white/60 tabular-nums">
-                        {[res.class_level, res.academic_year].filter(Boolean).join(' · ')}
+                        {res.academic_year}
                       </p>
                     )}
                   </div>

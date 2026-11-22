@@ -103,13 +103,14 @@ export function ResultsPage() {
                   <button
                     type="button"
                     onClick={() => setActivePoster(res)}
-                    className="block h-56 w-full overflow-hidden bg-[hsl(var(--brand-surface))] text-left"
+                    className="block w-full shrink-0 aspect-square overflow-hidden bg-[hsl(var(--brand-surface))] text-left"
                     aria-label={`View achievement poster for ${res.student_name}`}
                   >
                     <SafeImage
                       src={res.photo_url}
                       alt={res.student_name}
-                      className="h-full w-full transition-transform duration-500 hover:scale-[1.03]"
+                      fit="contain"
+                      className="h-full w-full"
                     />
                   </button>
                 ) : null}
@@ -138,20 +139,12 @@ export function ResultsPage() {
                   </div>
                 </div>
 
-                <dl className="mt-auto grid grid-cols-3 gap-2 border-t border-[hsl(var(--border))] px-5 py-3 text-center tabular-nums">
+                <dl className="mt-auto grid grid-cols-2 gap-2 border-t border-[hsl(var(--border))] px-5 py-3 text-center tabular-nums">
                   <div>
                     <dt className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
                       Score
                     </dt>
                     <dd className="text-sm font-bold text-[hsl(var(--brand-navy))]">{res.score}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                      Class
-                    </dt>
-                    <dd className="text-sm font-medium text-[hsl(var(--foreground))]">
-                      {res.class_level || '—'}
-                    </dd>
                   </div>
                   <div>
                     <dt className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
@@ -206,7 +199,7 @@ export function ResultsPage() {
               src={activePoster.photo_url}
               alt={activePoster.student_name}
               fit="contain"
-              className="max-h-[75vh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
+              className="mx-auto aspect-square max-h-[75vh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
             />
             <p className="mt-2.5 px-1 text-sm font-semibold text-[hsl(var(--brand-navy))]">
               {activePoster.student_name} — {activePoster.score} ({activePoster.achievement_title})
