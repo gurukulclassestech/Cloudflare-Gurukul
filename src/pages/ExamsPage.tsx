@@ -23,12 +23,9 @@ const STATUS_OPTIONS = [
 ];
 
 export function ExamsPage() {
-  const { site } = useSite();
-  usePageSeo(
-    'exams',
-    'Examination announcements',
-    "Upcoming test and examination schedules published by Giri Sir's Gurukul Classes."
-  );
+  const { site, getPageText } = useSite();
+  const pt = getPageText('exams');
+  usePageSeo('exams', pt.title, pt.description);
 
   const [items, setItems] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,9 +76,9 @@ export function ExamsPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Assessments"
-        title="Examination announcements"
-        description="Test and examination schedules published by the institute. Instructions and registration details are shared with each announcement."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell py-12 sm:py-16">
@@ -149,8 +146,10 @@ export function ExamsPage() {
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Calendar}
-              title="No exam matches these filters"
-              description="Try clearing a filter or searching for a different exam."
+              title={pt.empty_title || 'No exam matches these filters'}
+              description={
+                pt.empty_description || 'Try clearing a filter or searching for a different exam.'
+              }
             />
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

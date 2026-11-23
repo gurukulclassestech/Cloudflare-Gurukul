@@ -13,12 +13,9 @@ import {
 import type { Testimonial } from '../types';
 
 export function TestimonialsPage() {
-  const { site } = useSite();
-  usePageSeo(
-    'testimonials',
-    'Student testimonials',
-    "Feedback shared by students and parents of Giri Sir's Gurukul Classes with their permission."
-  );
+  const { site, getPageText } = useSite();
+  const pt = getPageText('testimonials');
+  usePageSeo('testimonials', pt.title, pt.description);
 
   const [items, setItems] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,9 +44,9 @@ export function TestimonialsPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Student voices"
-        title="Testimonials"
-        description="Feedback is published here only after a student or parent approves it. Nothing is written on their behalf."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell py-12 sm:py-16">
@@ -58,8 +55,11 @@ export function TestimonialsPage() {
         ) : displayItems.length === 0 ? (
           <EmptyState
             icon={MessageSquareQuote}
-            title="No testimonials published yet"
-            description="Approved student feedback will appear here. The institute publishes a testimonial only with permission."
+            title={pt.empty_title || 'No testimonials published yet'}
+            description={
+              pt.empty_description ||
+              'Approved student feedback will appear here. The institute publishes a testimonial only with permission.'
+            }
           />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

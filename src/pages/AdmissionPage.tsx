@@ -38,13 +38,10 @@ const ADMISSION_STEPS = [
 ];
 
 export function AdmissionPage() {
-  const { site } = useSite();
+  const { site, getPageText } = useSite();
+  const pt = getPageText('admission');
   const [searchParams] = useSearchParams();
-  usePageSeo(
-    'admission',
-    'Admission',
-    'Apply for admission, understand the process, and speak to the admissions team.'
-  );
+  usePageSeo('admission', pt.title, pt.description);
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [form, setForm] = useState({
@@ -144,9 +141,9 @@ export function AdmissionPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Admissions"
-        title="Apply for admission"
-        description="Submit the application below. Our team will call you to explain batch timings, subjects and the fee structure before you confirm a seat."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       >
         {site.phone && (
           <a
@@ -162,10 +159,10 @@ export function AdmissionPage() {
       <section className="shell grid gap-8 py-12 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
         <div className="surface p-5 sm:p-7">
           <h2 className="display-face text-2xl text-[hsl(var(--brand-navy))]">
-            Admission application
+            {pt.secondary_title || 'Admission application'}
           </h2>
           <p className="mb-5 mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-            Fields marked with <span className="text-red-600">*</span> are required.
+            {pt.secondary_description || 'Fields marked with * are required.'}
           </p>
 
           {status === 'done' ? (
@@ -380,7 +377,7 @@ export function AdmissionPage() {
                 {status === 'saving' && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 )}
-                Submit admission application
+                {pt.cta_label || 'Submit admission application'}
               </button>
             </form>
           )}
@@ -388,7 +385,7 @@ export function AdmissionPage() {
 
         <aside className="space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(var(--brand-blue))]">
-            How admission works
+            {pt.extra_label_1 || 'How admission works'}
           </h2>
           {ADMISSION_STEPS.map(({ icon: Icon, title, text }, idx) => (
             <div key={title} className="surface flex gap-3 p-4">
@@ -406,7 +403,9 @@ export function AdmissionPage() {
             </div>
           ))}
           <div className="rounded-xl border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--brand-surface))] p-4 text-xs leading-relaxed text-[hsl(var(--muted-foreground))]">
-            <p className="font-semibold text-[hsl(var(--brand-navy))]">Institute address</p>
+            <p className="font-semibold text-[hsl(var(--brand-navy))]">
+              {pt.extra_label_2 || 'Institute address'}
+            </p>
             <p className="mt-1">{site.address}</p>
             <p className="mt-1">{site.office_hours}</p>
           </div>

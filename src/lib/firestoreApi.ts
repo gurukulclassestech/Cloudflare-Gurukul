@@ -15,7 +15,12 @@ import {
   type DocumentData,
   type QueryConstraint,
 } from 'firebase/firestore';
-import { DEFAULT_COURSE_CATEGORY_DESCRIPTIONS, DEFAULT_SITE_SETTINGS } from '../data/defaults';
+import {
+  DEFAULT_COURSE_CATEGORY_DESCRIPTIONS,
+  DEFAULT_PAGE_TEXTS,
+  DEFAULT_SITE_SETTINGS,
+} from '../data/defaults';
+import type { PageText, PageTextKey } from '../types';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
 
 const SYNC_CHANNEL_NAME = 'gurukul_cms_sync';
@@ -227,6 +232,32 @@ export function sanitizeSiteSettingsPayload(
     customized_modules: customizedModules,
     privacy_content: str(merged.privacy_content, 5000),
     terms_content: str(merged.terms_content, 5000),
+  };
+}
+
+export function sanitizePageTextPayload(
+  pageKey: PageTextKey,
+  raw: Partial<PageText>
+): Record<string, unknown> {
+  const def = DEFAULT_PAGE_TEXTS[pageKey];
+  const str = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+  const title = str(raw.title, 220) || def.title;
+
+  return {
+    eyebrow: str(raw.eyebrow ?? def.eyebrow, 120),
+    title,
+    description: str(raw.description ?? def.description, 1000),
+    secondary_eyebrow: str(raw.secondary_eyebrow ?? def.secondary_eyebrow ?? '', 120),
+    secondary_title: str(raw.secondary_title ?? def.secondary_title ?? '', 220),
+    secondary_description: str(raw.secondary_description ?? def.secondary_description ?? '', 1000),
+    cta_label: str(raw.cta_label ?? def.cta_label ?? '', 80),
+    cta_link: str(raw.cta_link ?? def.cta_link ?? '', 200),
+    empty_title: str(raw.empty_title ?? def.empty_title ?? '', 200),
+    empty_description: str(raw.empty_description ?? def.empty_description ?? '', 600),
+    extra_label_1: str(raw.extra_label_1 ?? def.extra_label_1 ?? '', 200),
+    extra_label_2: str(raw.extra_label_2 ?? def.extra_label_2 ?? '', 200),
+    extra_label_3: str(raw.extra_label_3 ?? def.extra_label_3 ?? '', 200),
+    updated_at: serverTimestamp(),
   };
 }
 

@@ -39,6 +39,7 @@ import { AdminGalleryPage } from './pages/admin/AdminGalleryPage';
 import { AdminEnquiriesPage } from './pages/admin/AdminEnquiriesPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminAccountPage } from './pages/admin/AdminAccountPage';
+import { AdminPageTextsPage } from './pages/admin/AdminPageTextsPage';
 
 export default function App() {
   return (
@@ -95,6 +96,7 @@ export default function App() {
                 <Route path="campus" element={<AdminCampusPage />} />
                 <Route path="about" element={<AdminSiteSettingsPage mode="about" />} />
                 <Route path="courses-page" element={<AdminSiteSettingsPage mode="courses-page" />} />
+                <Route path="page-texts" element={<AdminPageTextsPage />} />
                 <Route path="banners" element={<AdminCrudPage module="banners" />} />
                 <Route path="hero" element={<AdminCrudPage module="banners" />} />
                 <Route path="popup" element={<AdminSiteSettingsPage mode="popup" />} />

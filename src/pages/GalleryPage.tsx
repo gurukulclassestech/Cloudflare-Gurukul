@@ -14,12 +14,9 @@ import { SafeImage } from '../components/SafeImage';
 import type { GalleryAlbum, GalleryMedia } from '../types';
 
 export function GalleryPage() {
-  const { site } = useSite();
-  usePageSeo(
-    'gallery',
-    'Gallery',
-    "Photographs from classrooms, study spaces and institute events at Giri Sir's Gurukul Classes."
-  );
+  const { site, getPageText } = useSite();
+  const pt = getPageText('gallery');
+  usePageSeo('gallery', pt.title, pt.description);
 
   const [media, setMedia] = useState<GalleryMedia[]>([]);
   const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
@@ -84,9 +81,9 @@ export function GalleryPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Gallery"
-        title="Inside the institute"
-        description="Classrooms, study spaces and moments from the academic year. Photographs of students are published only with permission."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell py-12 sm:py-16">
@@ -101,7 +98,7 @@ export function GalleryPage() {
                   : 'border-[hsl(var(--border))] bg-white text-[hsl(var(--foreground))]'
               }`}
             >
-              All albums
+              {pt.extra_label_1 || 'All albums'}
             </button>
             {displayAlbums.map((album) => (
               <button
@@ -132,8 +129,10 @@ export function GalleryPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={ImageIcon}
-            title="No photographs in this album yet"
-            description="Photographs uploaded from the admin console will appear here."
+            title={pt.empty_title || 'No photographs in this album yet'}
+            description={
+              pt.empty_description || 'Photographs uploaded from the admin console will appear here.'
+            }
           />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

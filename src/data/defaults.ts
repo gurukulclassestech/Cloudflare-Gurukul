@@ -7,6 +7,8 @@ import type {
   GalleryMedia,
   HomepageSection,
   NavItem,
+  PageText,
+  PageTextKey,
   SiteSettings,
   StudentResult,
   Testimonial,
@@ -947,3 +949,143 @@ There should be a clear answer: doubt hours, extra practice sets, or a conversat
     is_published: true,
   },
 ];
+
+export const DEFAULT_PAGE_TEXTS: Record<PageTextKey, PageText> = {
+  results: {
+    id: 'results',
+    eyebrow: 'Achievements',
+    title: 'Results and academic achievements',
+    description:
+      "Every record on this page is entered and verified by the institute, and published only with the student's consent.",
+    empty_title: 'No results published yet',
+    empty_description:
+      "The institute publishes a result only after verification and written consent from the student's family.",
+    extra_label_1: 'Result section',
+    extra_label_2: 'All Sections',
+    extra_label_3: 'Academic year',
+  },
+  exams: {
+    id: 'exams',
+    eyebrow: 'Assessments',
+    title: 'Examination announcements',
+    description:
+      'Test and examination schedules published by the institute. Instructions and registration details are shared with each announcement.',
+    empty_title: 'No exam matches these filters',
+    empty_description: 'Try clearing a filter or searching for a different exam.',
+  },
+  lectures: {
+    id: 'lectures',
+    eyebrow: 'Video library',
+    title: 'Recorded lectures',
+    description:
+      'Revision explanations recorded by our subject faculty so students can review key concepts at home.',
+    empty_title: 'No published lectures yet',
+    empty_description:
+      'Recorded lectures will appear here once the faculty publishes them. Until then, please attend the scheduled classes at the institute.',
+    extra_label_1: 'Watch lecture',
+  },
+  faculty: {
+    id: 'faculty',
+    eyebrow: 'Our teachers',
+    title: 'Faculty and mentors',
+    description:
+      'Subject teachers who work with the same students through the year — tracking daily practice, tests and doubts.',
+    empty_title: 'Faculty profiles are being added',
+    empty_description: 'Teaching profiles appear here once the institute publishes them.',
+  },
+  testimonials: {
+    id: 'testimonials',
+    eyebrow: 'Student voices',
+    title: 'Testimonials',
+    description:
+      'Feedback is published here only after a student or parent approves it. Nothing is written on their behalf.',
+    empty_title: 'No testimonials published yet',
+    empty_description:
+      'Approved student feedback will appear here. The institute publishes a testimonial only with permission.',
+  },
+  gallery: {
+    id: 'gallery',
+    eyebrow: 'Gallery',
+    title: 'Inside the institute',
+    description:
+      'Classrooms, study spaces and moments from the academic year. Photographs of students are published only with permission.',
+    empty_title: 'No photographs in this album yet',
+    empty_description: 'Photographs uploaded from the admin console will appear here.',
+    extra_label_1: 'All albums',
+  },
+  blogs: {
+    id: 'blogs',
+    eyebrow: 'Newsroom',
+    title: 'News and articles',
+    description: 'Institute notices, exam guidance and study advice for students and parents.',
+    empty_title: 'No article matches this search',
+    empty_description: 'Try a different search term or category.',
+  },
+  contact: {
+    id: 'contact',
+    eyebrow: 'Contact',
+    title: 'Talk to the institute',
+    description:
+      'Call us during office hours, send an email, or submit an enquiry and our team will get back to you.',
+    secondary_title: 'Send an enquiry',
+    secondary_description: 'Our admissions team usually responds within one working day.',
+    cta_label: 'Send enquiry',
+    extra_label_1: 'Chat on WhatsApp',
+    extra_label_2: 'Open in Google Maps',
+  },
+  admission: {
+    id: 'admission',
+    eyebrow: 'Admissions',
+    title: 'Apply for admission',
+    description:
+      'Submit the application below. Our team will call you to explain batch timings, subjects and the fee structure before you confirm a seat.',
+    secondary_title: 'Admission application',
+    secondary_description: 'Fields marked with * are required.',
+    cta_label: 'Submit admission application',
+    extra_label_1: 'How admission works',
+    extra_label_2: 'Institute address',
+  },
+  about: {
+    id: 'about',
+    eyebrow: 'About us',
+    title: 'Our story & philosophy',
+    description: 'Academic discipline',
+    secondary_eyebrow: 'How we teach',
+    secondary_title: 'Meet our teachers and review the batch plan',
+    cta_label: 'Apply for admission',
+    extra_label_1: 'Study with Enjoyment · Success with Excellence',
+    extra_label_2: 'Visit the institute',
+    extra_label_3: 'View courses',
+  },
+  footer: {
+    id: 'footer',
+    eyebrow: 'Footer',
+    title: 'Quick links',
+    description: 'Courses',
+    secondary_title: 'Contact',
+    secondary_description: 'Privacy Policy',
+    extra_label_1: 'Terms & Conditions',
+    extra_label_2: 'Admin Console',
+  },
+  course_detail: {
+    id: 'course_detail',
+    eyebrow: 'Admission / Enquiry',
+    title: 'About this programme',
+    description:
+      'Share your details and our admissions team will confirm batch timings and seat availability.',
+    secondary_eyebrow: 'Ready to apply?',
+    secondary_title: 'Complete full admission form',
+    cta_label: 'Submit enquiry',
+    extra_label_1: 'All courses',
+  },
+  blog_detail: {
+    id: 'blog_detail',
+    eyebrow: 'Article',
+    title: 'Thinking about admission?',
+    description: 'Speak to the admissions team about batches, subjects and fees.',
+    cta_label: 'Apply for admission',
+    extra_label_1: 'All articles',
+    extra_label_2: 'Contact us',
+  },
+};
+

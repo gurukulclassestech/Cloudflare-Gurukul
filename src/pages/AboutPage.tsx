@@ -11,10 +11,11 @@ import { PageHeroBanner, RichInlineText, SectionHeader } from '../components/Com
 import { SafeImage } from '../components/SafeImage';
 
 export function AboutPage() {
-  const { site, sections } = useSite();
+  const { site, sections, getPageText } = useSite();
+  const pt = getPageText('about');
   usePageSeo(
     'about',
-    'About us',
+    pt.eyebrow || 'About us',
     site.about_intro ||
       `About ${site.institute_name} — teaching approach, small batches and academic discipline.`
   );
@@ -43,7 +44,7 @@ export function AboutPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="About us"
+        eyebrow={pt.eyebrow || 'About us'}
         title={site.about_heading || DEFAULT_SITE_SETTINGS.about_heading}
         description={site.about_intro || DEFAULT_SITE_SETTINGS.about_intro}
       />
@@ -72,7 +73,7 @@ export function AboutPage() {
       {/* Story & Image */}
       <section className="shell grid items-start gap-10 py-14 sm:py-20 lg:grid-cols-[1.15fr_0.85fr]">
         <div>
-          <p className="eyebrow">Our story &amp; philosophy</p>
+          <p className="eyebrow">{pt.title || 'Our story & philosophy'}</p>
           <h2 className="display-face mt-3 text-[1.8rem] leading-tight text-[hsl(var(--brand-navy))] sm:text-4xl">
             {intro?.title || "Study with Enjoyment — Since 2009"}
           </h2>
@@ -100,14 +101,14 @@ export function AboutPage() {
               to="/admission"
               className="inline-flex items-center gap-2 rounded-lg bg-[#FFBE1B] px-5 py-2.5 text-sm font-semibold text-[#122B5C] transition hover:bg-[#f2b211]"
             >
-              <span>Apply for admission</span>
+              <span>{pt.cta_label || 'Apply for admission'}</span>
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link
               to="/courses"
               className="inline-flex items-center rounded-lg border border-[hsl(var(--brand-navy))]/25 px-5 py-2.5 text-sm font-semibold text-[hsl(var(--brand-navy))] transition hover:bg-[hsl(var(--brand-surface))]"
             >
-              View courses
+              {pt.extra_label_3 || 'View courses'}
             </Link>
           </div>
         </div>
@@ -121,7 +122,7 @@ export function AboutPage() {
             />
           </div>
           <div className="surface p-5">
-            <p className="eyebrow">Academic discipline</p>
+            <p className="eyebrow">{pt.description || 'Academic discipline'}</p>
             <p className="mt-1.5 text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
               {site.tagline}
             </p>
@@ -134,7 +135,7 @@ export function AboutPage() {
         <section className="bg-[hsl(var(--brand-navy-deep))] py-14 text-white sm:py-16">
           <div className="shell max-w-4xl text-center">
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#FFBE1B]">
-              Study with Enjoyment · Success with Excellence
+              {pt.extra_label_1 || 'Study with Enjoyment · Success with Excellence'}
             </p>
             <blockquote className="display-face mt-4 text-2xl leading-snug text-white sm:text-4xl">
               “{mission}”
@@ -150,7 +151,7 @@ export function AboutPage() {
           <div className="shell">
             <SectionHeader
               align="center"
-              eyebrow="How we teach"
+              eyebrow={pt.secondary_eyebrow || 'How we teach'}
               title={features.title}
               subtitle={features.subtitle}
             />
@@ -177,9 +178,9 @@ export function AboutPage() {
       <section className="shell py-14 sm:py-20">
         <div className="surface flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
           <div>
-            <p className="eyebrow">Visit the institute</p>
+            <p className="eyebrow">{pt.extra_label_2 || 'Visit the institute'}</p>
             <h2 className="display-face mt-2 text-2xl text-[hsl(var(--brand-navy))] sm:text-3xl">
-              Meet our teachers and review the batch plan
+              {pt.secondary_title || 'Meet our teachers and review the batch plan'}
             </h2>
             <p className="mt-1.5 text-sm text-[hsl(var(--muted-foreground))]">
               {site.address} · {site.office_hours}

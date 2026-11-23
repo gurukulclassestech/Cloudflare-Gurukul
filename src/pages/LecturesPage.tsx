@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, Video, X } from 'lucide-react';
+import { useSite } from '../context/SiteContext';
 import { CLASS_LEVELS } from '../data/defaults';
 import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
@@ -33,11 +34,9 @@ function toEmbedUrl(url: string): string | null {
 }
 
 export function LecturesPage() {
-  usePageSeo(
-    'lectures',
-    'Video lectures',
-    'Recorded explanations and subject revision lectures from Giri Sir\'s Gurukul Classes.'
-  );
+  const { getPageText } = useSite();
+  const pt = getPageText('lectures');
+  usePageSeo('lectures', pt.title, pt.description);
 
   const [items, setItems] = useState<Lecture[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,9 +83,9 @@ export function LecturesPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Video library"
-        title="Recorded lectures"
-        description="Revision explanations recorded by our subject faculty so students can review key concepts at home."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell py-12 sm:py-16">
@@ -140,17 +139,27 @@ export function LecturesPage() {
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Video}
-              title={items.length === 0 ? 'No published lectures yet' : 'No lecture matches these filters'}
+              title={
+                items.length === 0
+                  ? pt.empty_title || 'No published lectures yet'
+                  : 'No lecture matches these filters'
+              }
               description={
                 items.length === 0
-                  ? 'Recorded lectures will appear here once the faculty publishes them. Until then, please attend the scheduled classes at the institute.'
+                  ? pt.empty_description ||
+                    'Recorded lectures will appear here once the faculty publishes them. Until then, please attend the scheduled classes at the institute.'
                   : 'Try a different subject, class or search term.'
               }
             />
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((lecture) => (
-                <LectureCard key={lecture.id} lecture={lecture} onPlay={setActiveLecture} />
+                <LectureCard
+                  key={lecture.id}
+                  lecture={lecture}
+                  onPlay={setActiveLecture}
+                  actionLabel={pt.extra_label_1}
+                />
               ))}
             </div>
           )}

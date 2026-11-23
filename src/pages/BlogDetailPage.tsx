@@ -10,7 +10,8 @@ import { SafeImage } from '../components/SafeImage';
 import type { BlogPost } from '../types';
 
 export function BlogDetailPage() {
-  const { site } = useSite();
+  const { site, getPageText } = useSite();
+  const pt = getPageText('blog_detail');
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,7 +115,7 @@ export function BlogDetailPage() {
         className="mb-6 inline-flex items-center gap-1.5 text-xs font-semibold text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--brand-navy))]"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        <span>All articles</span>
+        <span>{pt.extra_label_1 || 'All articles'}</span>
       </Link>
 
       <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
@@ -185,23 +186,23 @@ export function BlogDetailPage() {
 
       <div className="mt-10 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--brand-surface))] p-6">
         <h2 className="text-base font-bold text-[hsl(var(--brand-navy))]">
-          Thinking about admission?
+          {pt.title || 'Thinking about admission?'}
         </h2>
         <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-          Speak to the admissions team about batches, subjects and fees.
+          {pt.description || 'Speak to the admissions team about batches, subjects and fees.'}
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             to="/admission"
             className="inline-flex items-center rounded-lg bg-[#FFBE1B] px-4 py-2 text-sm font-semibold text-[#122B5C] hover:bg-[#f2b211]"
           >
-            Apply for admission
+            {pt.cta_label || 'Apply for admission'}
           </Link>
           <Link
             to="/contact"
             className="inline-flex items-center rounded-lg border border-[hsl(var(--border))] bg-white px-4 py-2 text-sm font-semibold text-[hsl(var(--brand-navy))] hover:bg-white/80"
           >
-            Contact us
+            {pt.extra_label_2 || 'Contact us'}
           </Link>
         </div>
       </div>

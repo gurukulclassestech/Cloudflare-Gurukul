@@ -387,6 +387,28 @@
         "updated_at": { "type": "string", "format": "date-time" }
       },
       "required": ["student_name", "phone", "amount", "status", "created_at", "updated_at"]
+    },
+    "PageText": {
+      "title": "PageText",
+      "description": "Admin-editable hero headings, subtitles, CTA labels, empty states, and section labels for public pages.",
+      "type": "object",
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 220 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "secondary_eyebrow": { "type": "string", "maxLength": 120 },
+        "secondary_title": { "type": "string", "maxLength": 220 },
+        "secondary_description": { "type": "string", "maxLength": 1000 },
+        "cta_label": { "type": "string", "maxLength": 80 },
+        "cta_link": { "type": "string", "maxLength": 200 },
+        "empty_title": { "type": "string", "maxLength": 200 },
+        "empty_description": { "type": "string", "maxLength": 600 },
+        "extra_label_1": { "type": "string", "maxLength": 200 },
+        "extra_label_2": { "type": "string", "maxLength": 200 },
+        "extra_label_3": { "type": "string", "maxLength": 200 },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["eyebrow", "title", "description"]
     }
   },
   "firestore": {
@@ -407,6 +429,7 @@
     "/admissions/{admissionId}": { "schema": { "$ref": "#/entities/AdmissionApplication" }, "description": "Private admission applications" },
     "/payments/{paymentId}": { "schema": { "$ref": "#/entities/PaymentRecord" }, "description": "Admin-managed student fee payment records" },
     "/admins/{uid}": { "schema": { "$ref": "#/entities/AdminUser" }, "description": "Authorized admin users" },
-    "/admin_activity/{activityId}": { "schema": { "$ref": "#/entities/AdminActivity" }, "description": "Admin activity audit log" }
+    "/admin_activity/{activityId}": { "schema": { "$ref": "#/entities/AdminActivity" }, "description": "Admin activity audit log" },
+    "/page_texts/{pageId}": { "schema": { "$ref": "#/entities/PageText" }, "description": "Editable copy and labels for public pages and footer" }
   }
 }

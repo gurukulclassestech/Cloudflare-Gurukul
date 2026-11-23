@@ -22,12 +22,9 @@ function sortSectionNames(a: string, b: string): number {
 }
 
 export function ResultsPage() {
-  const { site } = useSite();
-  usePageSeo(
-    'results',
-    'Results and achievements',
-    "Verified student results and academic achievements published by Giri Sir's Gurukul Classes."
-  );
+  const { site, getPageText } = useSite();
+  const pt = getPageText('results');
+  usePageSeo('results', pt.title, pt.description);
 
   const [items, setItems] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,9 +88,9 @@ export function ResultsPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Achievements"
-        title="Results and academic achievements"
-        description="Every record on this page is entered and verified by the institute, and published only with the student's consent."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell py-12 sm:py-16">
@@ -102,7 +99,7 @@ export function ResultsPage() {
             {sections.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                  Result section
+                  {pt.extra_label_1 || 'Result section'}
                 </span>
                 <button
                   type="button"
@@ -113,7 +110,7 @@ export function ResultsPage() {
                       : 'border-[hsl(var(--border))] bg-white text-[hsl(var(--foreground))] hover:border-[hsl(var(--brand-navy))]/40'
                   }`}
                 >
-                  All Sections
+                  {pt.extra_label_2 || 'All Sections'}
                 </button>
                 {sections.map((sec) => (
                   <button
@@ -135,7 +132,7 @@ export function ResultsPage() {
             {years.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                  Academic year
+                  {pt.extra_label_3 || 'Academic year'}
                 </span>
                 <button
                   type="button"
@@ -172,8 +169,11 @@ export function ResultsPage() {
         ) : grouped.length === 0 ? (
           <EmptyState
             icon={Award}
-            title="No results published yet"
-            description="The institute publishes a result only after verification and written consent from the student's family."
+            title={pt.empty_title || 'No results published yet'}
+            description={
+              pt.empty_description ||
+              "The institute publishes a result only after verification and written consent from the student's family."
+            }
           />
         ) : (
           grouped.map((group, idx) => (
@@ -185,7 +185,7 @@ export function ResultsPage() {
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                     <div>
-                      <p className="eyebrow">Result section</p>
+                      <p className="eyebrow">{pt.extra_label_1 || 'Result section'}</p>
                       <h2 className="display-face mt-1 text-2xl leading-tight text-[hsl(var(--brand-navy))] sm:text-[1.9rem]">
                         {group.title}
                       </h2>

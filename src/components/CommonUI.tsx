@@ -499,9 +499,11 @@ export function ExamCard({ exam }: { exam: Exam }) {
 export function LectureCard({
   lecture,
   onPlay,
+  actionLabel,
 }: {
   lecture: Lecture;
   onPlay: (lecture: Lecture) => void;
+  actionLabel?: string;
 }) {
   return (
     <article className="surface surface-hover group flex flex-col overflow-hidden">
@@ -551,7 +553,7 @@ export function LectureCard({
             onClick={() => onPlay(lecture)}
             className="font-semibold text-[hsl(var(--brand-navy))] hover:text-[hsl(var(--brand-blue))]"
           >
-            Watch lecture
+            {actionLabel || 'Watch lecture'}
           </button>
         </div>
       </div>

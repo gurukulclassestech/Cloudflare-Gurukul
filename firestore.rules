@@ -399,6 +399,32 @@ service cloud.firestore {
         optStr(data, 'notes', 1000);
     }
 
+    function isValidPageText(data) {
+      return data.keys().hasAll(['eyebrow', 'title', 'description']) &&
+        data.keys().hasOnly([
+          'eyebrow', 'title', 'description',
+          'secondary_eyebrow', 'secondary_title', 'secondary_description',
+          'cta_label', 'cta_link',
+          'empty_title', 'empty_description',
+          'extra_label_1', 'extra_label_2', 'extra_label_3',
+          'updated_at'
+        ]) &&
+        reqStr(data, 'eyebrow', 0, 120) &&
+        reqStr(data, 'title', 1, 220) &&
+        reqStr(data, 'description', 0, 1000) &&
+        optStr(data, 'secondary_eyebrow', 120) &&
+        optStr(data, 'secondary_title', 220) &&
+        optStr(data, 'secondary_description', 1000) &&
+        optStr(data, 'cta_label', 80) &&
+        optStr(data, 'cta_link', 200) &&
+        optStr(data, 'empty_title', 200) &&
+        optStr(data, 'empty_description', 600) &&
+        optStr(data, 'extra_label_1', 200) &&
+        optStr(data, 'extra_label_2', 200) &&
+        optStr(data, 'extra_label_3', 200) &&
+        (!('updated_at' in data) || data.updated_at is timestamp);
+    }
+
     // --- Collection Rules ---
 
     // Connection check probe
@@ -579,6 +605,14 @@ service cloud.firestore {
       allow list: if isBootstrappedAdmin();
       allow create: if isValidId(activityId) && isAdmin() && isValidAdminActivity(incoming());
       allow update, delete: if false;
+    }
+
+    // Page Texts & Labels
+    match /page_texts/{pageId} {
+      allow get: if isValidId(pageId);
+      allow list: if existing().title is string || isBootstrappedAdmin();
+      allow create, update: if isSignedIn() && isValidId(pageId) && isValidPageText(incoming()) && isAdmin();
+      allow delete: if isSignedIn() && isValidId(pageId) && isAdmin();
     }
   }
 }

@@ -8,7 +8,8 @@ import { BrandLogo } from './Header';
 import type { Course } from '../types';
 
 export function Footer() {
-  const { site, footerNav } = useSite();
+  const { site, footerNav, getPageText } = useSite();
+  const pt = getPageText('footer');
   const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export function Footer() {
 
         <div>
           <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-[#FFBE1B]">
-            Quick links
+            {pt.title || 'Quick links'}
           </h3>
           <ul className="mt-4 space-y-2.5 text-sm">
             {footerNav.map((item) => (
@@ -79,7 +80,7 @@ export function Footer() {
 
         <div>
           <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-[#FFBE1B]">
-            Courses
+            {pt.description || 'Courses'}
           </h3>
           <ul className="mt-4 space-y-2.5 text-sm">
             {displayCourses.map((course) => (
@@ -97,7 +98,7 @@ export function Footer() {
 
         <div>
           <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-[#FFBE1B]">
-            Contact
+            {pt.secondary_title || 'Contact'}
           </h3>
           <ul className="mt-4 space-y-3 text-sm">
             {site.phone && (
@@ -137,13 +138,13 @@ export function Footer() {
           <p>{site.footer_copyright}</p>
           <div className="flex flex-wrap items-center gap-5">
             <Link to="/privacy-policy" className="hover:text-white">
-              Privacy Policy
+              {pt.secondary_description || 'Privacy Policy'}
             </Link>
             <Link to="/terms" className="hover:text-white">
-              Terms &amp; Conditions
+              {pt.extra_label_1 || 'Terms & Conditions'}
             </Link>
             <Link to="/admin" className="hover:text-white">
-              Admin Console
+              {pt.extra_label_2 || 'Admin Console'}
             </Link>
           </div>
         </div>

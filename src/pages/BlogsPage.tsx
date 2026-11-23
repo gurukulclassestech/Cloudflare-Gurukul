@@ -16,12 +16,9 @@ const INPUT_CLASS =
   'w-full rounded-lg border border-[hsl(var(--input))] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[hsl(var(--brand-navy))] focus:ring-2 focus:ring-[hsl(var(--brand-navy))]/15';
 
 export function BlogsPage() {
-  const { site } = useSite();
-  usePageSeo(
-    'blogs',
-    'News and articles',
-    'Institute notices, exam guidance and study advice for students and parents.'
-  );
+  const { site, getPageText } = useSite();
+  const pt = getPageText('blogs');
+  usePageSeo('blogs', pt.title, pt.description);
 
   const [items, setItems] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,9 +65,9 @@ export function BlogsPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Newsroom"
-        title="News and articles"
-        description="Institute notices, exam guidance and study advice for students and parents."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell py-12 sm:py-16">
@@ -109,8 +106,8 @@ export function BlogsPage() {
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Newspaper}
-              title="No article matches this search"
-              description="Try a different search term or category."
+              title={pt.empty_title || 'No article matches this search'}
+              description={pt.empty_description || 'Try a different search term or category.'}
             />
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

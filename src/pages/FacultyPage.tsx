@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
+import { useSite } from '../context/SiteContext';
 import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import {
@@ -11,11 +12,9 @@ import {
 import type { FacultyMember } from '../types';
 
 export function FacultyPage() {
-  usePageSeo(
-    'faculty',
-    'Faculty and mentors',
-    'Teaching profiles, subjects, qualifications and experience at Giri Sir\'s Gurukul Classes.'
-  );
+  const { getPageText } = useSite();
+  const pt = getPageText('faculty');
+  usePageSeo('faculty', pt.title, pt.description);
 
   const [items, setItems] = useState<FacultyMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,9 +40,9 @@ export function FacultyPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Our teachers"
-        title="Faculty and mentors"
-        description="Subject teachers who work with the same students through the year — tracking daily practice, tests and doubts."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell py-12 sm:py-16">
@@ -52,8 +51,10 @@ export function FacultyPage() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="Faculty profiles are being added"
-            description="Teaching profiles appear here once the institute publishes them."
+            title={pt.empty_title || 'Faculty profiles are being added'}
+            description={
+              pt.empty_description || 'Teaching profiles appear here once the institute publishes them.'
+            }
           />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

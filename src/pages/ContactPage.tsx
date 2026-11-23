@@ -5,10 +5,11 @@ import { PageHeroBanner } from '../components/CommonUI';
 import { EnquiryForm } from '../components/EnquiryForm';
 
 export function ContactPage() {
-  const { site } = useSite();
+  const { site, getPageText } = useSite();
+  const pt = getPageText('contact');
   usePageSeo(
     'contact',
-    'Contact us',
+    pt.title || 'Contact us',
     `Phone, email, address and office hours for ${site.institute_name}.`
   );
 
@@ -32,9 +33,9 @@ export function ContactPage() {
   return (
     <>
       <PageHeroBanner
-        eyebrow="Contact"
-        title="Talk to the institute"
-        description="Call us during office hours, send an email, or submit an enquiry and our team will get back to you."
+        eyebrow={pt.eyebrow}
+        title={pt.title}
+        description={pt.description}
       />
 
       <section className="shell grid gap-8 py-12 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
@@ -68,7 +69,7 @@ export function ContactPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1EB958]"
               >
                 <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                <span>Chat on WhatsApp</span>
+                <span>{pt.extra_label_1 || 'Chat on WhatsApp'}</span>
               </a>
             )}
             {site.map_link && (
@@ -79,7 +80,7 @@ export function ContactPage() {
                 className="inline-flex items-center gap-2 rounded-lg border border-[hsl(var(--brand-navy))]/25 bg-white px-4 py-2.5 text-sm font-semibold text-[hsl(var(--brand-navy))] transition hover:bg-[hsl(var(--brand-surface))]"
               >
                 <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                <span>Open in Google Maps</span>
+                <span>{pt.extra_label_2 || 'Open in Google Maps'}</span>
               </a>
             )}
           </div>
@@ -108,11 +109,14 @@ export function ContactPage() {
         </div>
 
         <div className="surface p-5 sm:p-7">
-          <h2 className="text-lg font-bold text-[hsl(var(--brand-navy))]">Send an enquiry</h2>
+          <h2 className="text-lg font-bold text-[hsl(var(--brand-navy))]">
+            {pt.secondary_title || 'Send an enquiry'}
+          </h2>
           <p className="mb-5 mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-            Our admissions team usually responds within one working day.
+            {pt.secondary_description ||
+              'Our admissions team usually responds within one working day.'}
           </p>
-          <EnquiryForm source="contact-page" submitLabel="Send enquiry" />
+          <EnquiryForm source="contact-page" submitLabel={pt.cta_label || 'Send enquiry'} />
         </div>
       </section>
     </>

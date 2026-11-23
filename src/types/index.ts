@@ -100,6 +100,38 @@ export interface NavItem {
   open_in_new_tab?: boolean;
 }
 
+export type PageTextKey =
+  | 'results'
+  | 'exams'
+  | 'lectures'
+  | 'faculty'
+  | 'testimonials'
+  | 'gallery'
+  | 'blogs'
+  | 'contact'
+  | 'admission'
+  | 'about'
+  | 'footer'
+  | 'course_detail'
+  | 'blog_detail';
+
+export interface PageText {
+  id: PageTextKey;
+  eyebrow: string;
+  title: string;
+  description: string;
+  secondary_eyebrow?: string;
+  secondary_title?: string;
+  secondary_description?: string;
+  cta_label?: string;
+  cta_link?: string;
+  empty_title?: string;
+  empty_description?: string;
+  extra_label_1?: string;
+  extra_label_2?: string;
+  extra_label_3?: string;
+}
+
 export interface SectionSubItem {
   title?: string;
   description?: string;

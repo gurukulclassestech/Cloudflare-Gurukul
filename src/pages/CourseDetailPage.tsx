@@ -42,7 +42,8 @@ const STATUS_BADGE_CLASSES: Record<string, string> = {
 
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { site } = useSite();
+  const { site, getPageText } = useSite();
+  const pt = getPageText('course_detail');
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -161,7 +162,7 @@ export function CourseDetailPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>All courses</span>
+            <span>{pt.extra_label_1 || 'All courses'}</span>
           </Link>
           <span
             className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
@@ -199,7 +200,7 @@ export function CourseDetailPage() {
 
           <div>
             <h2 className="display-face text-2xl text-[hsl(var(--brand-navy))]">
-              About this programme
+              {pt.title || 'About this programme'}
             </h2>
             <div className="mt-3 space-y-3 text-[15px] leading-relaxed text-[hsl(var(--muted-foreground))]">
               {String(course.description || '')
@@ -238,17 +239,20 @@ export function CourseDetailPage() {
         <aside className="space-y-4 lg:sticky lg:top-24">
           <div className="surface overflow-hidden">
             <div className="bg-[hsl(var(--brand-navy))] px-6 py-5 text-white">
-              <p className="eyebrow text-[#FFBE1B]">Admission / Enquiry</p>
+              <p className="eyebrow text-[#FFBE1B]">
+                {pt.eyebrow || 'Admission / Enquiry'}
+              </p>
               <h2 className="mt-1.5 text-xl font-bold">Enquire for {course.name}</h2>
               <p className="mt-1 text-xs leading-relaxed text-white/75">
-                Share your details and our admissions team will confirm batch timings and seat availability.
+                {pt.description ||
+                  'Share your details and our admissions team will confirm batch timings and seat availability.'}
               </p>
             </div>
             <div className="p-6">
               <EnquiryForm
                 source={`course:${course.slug || course.id}`}
                 defaultCourse={course.name}
-                submitLabel="Submit enquiry"
+                submitLabel={pt.cta_label || 'Submit enquiry'}
                 compact
               />
             </div>
@@ -257,10 +261,10 @@ export function CourseDetailPage() {
           <div className="surface flex items-center justify-between p-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-                Ready to apply?
+                {pt.secondary_eyebrow || 'Ready to apply?'}
               </p>
               <p className="mt-0.5 text-sm font-semibold text-[hsl(var(--brand-navy))]">
-                Complete full admission form
+                {pt.secondary_title || 'Complete full admission form'}
               </p>
             </div>
             <Link
