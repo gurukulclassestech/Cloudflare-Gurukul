@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, Video, X } from 'lucide-react';
 import { CLASS_LEVELS } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import {
   CardSkeletonGrid,
@@ -47,10 +47,21 @@ export function LecturesPage() {
   const [activeLecture, setActiveLecture] = useState<Lecture | null>(null);
 
   useEffect(() => {
-    fetchPublished<Lecture>('lectures', 'display_order', 'asc', 100)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    const unsub = subscribePublished<Lecture>(
+      'lectures',
+      (rows) => {
+        setItems(rows);
+        setLoading(false);
+      },
+      'display_order',
+      'asc',
+      100,
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const subjects = useMemo(

@@ -6,7 +6,7 @@ import {
   DEFAULT_RESULTS,
   resolveResultSection,
 } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import { CardSkeletonGrid, EmptyState, PageHeroBanner } from '../components/CommonUI';
 import { SafeImage } from '../components/SafeImage';
@@ -36,10 +36,21 @@ export function ResultsPage() {
   const [activePoster, setActivePoster] = useState<StudentResult | null>(null);
 
   useEffect(() => {
-    fetchPublished<StudentResult>('results', 'display_order', 'asc', 100)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    const unsub = subscribePublished<StudentResult>(
+      'results',
+      (rows) => {
+        setItems(rows);
+        setLoading(false);
+      },
+      'display_order',
+      'asc',
+      100,
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const isCustomized = site.customized_modules?.includes('results');

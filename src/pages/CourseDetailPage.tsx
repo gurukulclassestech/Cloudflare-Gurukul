@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import { DEFAULT_COURSES, SITE_IMAGES } from '../data/defaults';
-import { fetchCollection, fetchPublicDocById } from '../lib/firestoreApi';
+import { fetchCollection, fetchPublicDocById, onContentUpdated } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import { EmptyState, PageHeroBanner } from '../components/CommonUI';
 import { EnquiryForm } from '../components/EnquiryForm';
@@ -58,7 +58,7 @@ export function CourseDetailPage() {
     let active = true;
     setLoading(true);
 
-    (async () => {
+    const loadCourse = async () => {
       try {
         const byId = await fetchPublicDocById<Course>('courses', id).catch(() => null);
         if (byId && byId.is_published !== false) {
@@ -81,10 +81,23 @@ export function CourseDetailPage() {
       } finally {
         if (active) setLoading(false);
       }
-    })();
+    };
+
+    loadCourse();
+    const unsubSync = onContentUpdated((src) => {
+      if (src === 'all' || src === 'courses' || src === 'site_settings') {
+        loadCourse();
+      }
+    });
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadCourse();
+    };
+    window.addEventListener('focus', onVisible);
 
     return () => {
       active = false;
+      unsubSync();
+      window.removeEventListener('focus', onVisible);
     };
   }, [id, coursesCustomized]);
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Newspaper, Search } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import { DEFAULT_BLOGS } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import {
   BlogCard,
@@ -29,10 +29,21 @@ export function BlogsPage() {
   const [category, setCategory] = useState('');
 
   useEffect(() => {
-    fetchPublished<BlogPost>('blogs', 'published_date', 'desc', 100)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    const unsub = subscribePublished<BlogPost>(
+      'blogs',
+      (rows) => {
+        setItems(rows);
+        setLoading(false);
+      },
+      'published_date',
+      'desc',
+      100,
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const isCustomized = site.customized_modules?.includes('blogs');

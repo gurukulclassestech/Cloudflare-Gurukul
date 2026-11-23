@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Calendar, Search } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import { CLASS_LEVELS, DEFAULT_EXAMS } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import {
   CardSkeletonGrid,
@@ -38,10 +38,21 @@ export function ExamsPage() {
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
-    fetchPublished<Exam>('exams', 'display_order', 'asc', 100)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    const unsub = subscribePublished<Exam>(
+      'exams',
+      (rows) => {
+        setItems(rows);
+        setLoading(false);
+      },
+      'display_order',
+      'asc',
+      100,
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const displayItems =

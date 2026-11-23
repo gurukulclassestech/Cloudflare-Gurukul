@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image as ImageIcon, X } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import { DEFAULT_GALLERY_ALBUMS, REPRESENTATIVE_GALLERY } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import {
   CardSkeletonGrid,
@@ -28,15 +28,50 @@ export function GalleryPage() {
   const [activeItem, setActiveItem] = useState<GalleryMedia | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetchPublished<GalleryMedia>('gallery_media', 'display_order', 'asc', 200).catch(() => []),
-      fetchPublished<GalleryAlbum>('gallery_albums', 'display_order', 'asc', 50).catch(() => []),
-    ])
-      .then(([m, a]) => {
+    let mediaSettled = false;
+    let albumsSettled = false;
+    const maybeDone = () => {
+      if (mediaSettled && albumsSettled) setLoading(false);
+    };
+
+    const unsubMedia = subscribePublished<GalleryMedia>(
+      'gallery_media',
+      (m) => {
         setMedia(m.filter((item) => (item.media_type || 'image') === 'image'));
+        mediaSettled = true;
+        maybeDone();
+      },
+      'display_order',
+      'asc',
+      200,
+      () => {
+        setMedia([]);
+        mediaSettled = true;
+        maybeDone();
+      }
+    );
+
+    const unsubAlbums = subscribePublished<GalleryAlbum>(
+      'gallery_albums',
+      (a) => {
         setAlbums(a);
-      })
-      .finally(() => setLoading(false));
+        albumsSettled = true;
+        maybeDone();
+      },
+      'display_order',
+      'asc',
+      50,
+      () => {
+        setAlbums([]);
+        albumsSettled = true;
+        maybeDone();
+      }
+    );
+
+    return () => {
+      unsubMedia();
+      unsubAlbums();
+    };
   }, []);
 
   const isCustomized = site.customized_modules?.includes('gallery');

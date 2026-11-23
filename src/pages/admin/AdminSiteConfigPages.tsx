@@ -23,8 +23,10 @@ import {
   createDocRecord,
   deleteDocRecord,
   fetchCollection,
+  getSingleton,
   logAdminActivity,
   markModuleCustomized,
+  sanitizeSiteSettingsPayload,
   setDocRecord,
   setSingleton,
   updateDocRecord,
@@ -130,130 +132,17 @@ export function AdminSiteSettingsPage({ mode }: { mode: SettingsSectionMode }) {
     setSavedMsg('');
     setErrorMsg('');
     try {
-      const str = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
-      const reqField = (v: unknown, fallback: string, min: number, max: number) => {
-        const cleaned = str(v, max);
-        return cleaned.length >= min ? cleaned : fallback.slice(0, max);
-      };
-
-      const highlights: HighlightStat[] = (
-        Array.isArray(form.about_highlights) ? form.about_highlights : []
-      )
-        .slice(0, 12)
-        .map((h) => ({
-          value: str(h?.value, 60),
-          label: str(h?.label, 120),
-        }))
-        .filter((h) => h.value || h.label);
-
-      const categoryDescriptions: CourseCategoryBlurb[] = (
-        Array.isArray(form.courses_category_descriptions)
-          ? form.courses_category_descriptions
-          : DEFAULT_COURSE_CATEGORY_DESCRIPTIONS
-      )
-        .slice(0, 12)
-        .map((c) => ({
-          category: str(c?.category, 120),
-          description: str(c?.description, 600),
-        }))
-        .filter((c) => c.category || c.description);
-
-      const approachSteps: ApproachStep[] = (
-        Array.isArray(form.courses_approach_steps) ? form.courses_approach_steps : []
-      )
-        .slice(0, 12)
-        .map((s) => ({
-          title: str(s?.title, 80),
-          description: str(s?.description, 300),
-        }))
-        .filter((s) => s.title || s.description);
-
-      const freq =
-        form.popup_frequency === 'once' || form.popup_frequency === 'always'
-          ? form.popup_frequency
-          : 'session';
-
-      const payload: Record<string, unknown> = {
-        institute_name: reqField(form.institute_name, DEFAULT_SITE_SETTINGS.institute_name, 2, 120),
-        tagline: str(form.tagline, 400),
-        about_heading: str(form.about_heading, 200),
-        about_intro: str(form.about_intro, 600),
-        about_mission: str(form.about_mission, 400),
-        about_story: str(form.about_story, 8000),
-        about_highlights: highlights,
-        courses_eyebrow: str(form.courses_eyebrow, 100),
-        courses_title: str(form.courses_title, 200),
-        courses_description: str(form.courses_description, 600),
-        courses_badge: str(form.courses_badge, 160),
-        courses_category_descriptions: categoryDescriptions,
-        courses_approach_eyebrow: str(form.courses_approach_eyebrow, 100),
-        courses_approach_title: str(form.courses_approach_title, 200),
-        courses_approach_description: str(form.courses_approach_description, 600),
-        courses_approach_steps: approachSteps,
-        logo_url: str(form.logo_url, 250000),
-        logo_width: str(form.logo_width || '90', 10),
-        logo_height: str(form.logo_height || '55', 10),
-        favicon_url: str(form.favicon_url, 250000),
-        phone: reqField(form.phone, DEFAULT_SITE_SETTINGS.phone, 5, 30),
-        email: reqField(form.email, DEFAULT_SITE_SETTINGS.email, 5, 120),
-        whatsapp: str(form.whatsapp, 30),
-        whatsapp_float_enabled: form.whatsapp_float_enabled !== false,
-        whatsapp_prefill_message: str(form.whatsapp_prefill_message, 300),
-        address: reqField(form.address, DEFAULT_SITE_SETTINGS.address, 3, 300),
-        map_embed_url: str(form.map_embed_url, 1000),
-        map_link: str(form.map_link, 1000),
-        office_hours: str(form.office_hours, 160),
-        announcement_enabled: Boolean(form.announcement_enabled),
-        announcement_text: str(form.announcement_text, 300),
-        announcement_bg_color: str(form.announcement_bg_color, 20),
-        announcement_text_color: str(form.announcement_text_color, 20),
-        header_bg_color: str(form.header_bg_color, 20),
-        header_text_color: str(form.header_text_color, 20),
-        footer_about: str(form.footer_about, 400),
-        footer_copyright: str(form.footer_copyright, 200),
-        facebook_url: str(form.facebook_url, 500),
-        instagram_url: str(form.instagram_url, 500),
-        youtube_url: str(form.youtube_url, 500),
-        twitter_url: str(form.twitter_url, 500),
-        seo_title: str(form.seo_title, 160),
-        seo_description: str(form.seo_description, 320),
-        seo_keywords: str(form.seo_keywords, 300),
-        og_image_url: str(form.og_image_url, 250000),
-        popup_enabled: Boolean(form.popup_enabled),
-        popup_title: str(form.popup_title, 160),
-        popup_body: str(form.popup_body, 500),
-        popup_cta_label: str(form.popup_cta_label, 60),
-        popup_cta_link: str(form.popup_cta_link, 200),
-        popup_submit_label: str(form.popup_submit_label, 80),
-        popup_image_url: str(form.popup_image_url, 250000),
-        popup_delay_seconds: Math.max(0, Math.min(120, Number(form.popup_delay_seconds) || 5)),
-        popup_frequency: freq,
-        popup_show_parent_name: form.popup_show_parent_name !== false,
-        popup_show_email: form.popup_show_email !== false,
-        popup_show_class: form.popup_show_class !== false,
-        popup_show_course: form.popup_show_course !== false,
-        popup_show_batch: form.popup_show_batch !== false,
-        popup_show_message: Boolean(form.popup_show_message),
-        payments_enabled: Boolean(form.payments_enabled),
-        payment_fee_label: str(form.payment_fee_label, 120),
-        upi_id: str(form.upi_id, 120),
-        payment_qr_url: str(form.payment_qr_url, 250000),
-        bank_details: str(form.bank_details, 600),
-        payment_instructions: str(form.payment_instructions, 600),
-        header_cta_enabled: form.header_cta_enabled !== false,
-        header_cta_label: str(form.header_cta_label || 'Apply Now', 60),
-        header_cta_link: str(form.header_cta_link || '/admission', 200),
-        float_apply_enabled: form.float_apply_enabled !== false,
-        float_apply_label: str(form.float_apply_label || 'Apply Now', 60),
-        float_apply_link: str(form.float_apply_link || '/admission', 200),
-        customized_modules: Array.isArray(form.customized_modules)
-          ? form.customized_modules.filter((m): m is string => typeof m === 'string').slice(0, 30)
-          : Array.isArray(site.customized_modules)
-            ? site.customized_modules.filter((m): m is string => typeof m === 'string').slice(0, 30)
-            : [],
-        privacy_content: str(form.privacy_content, 5000),
-        terms_content: str(form.terms_content, 5000),
-      };
+      const latestDoc = await getSingleton<Record<string, unknown>>('site_settings', 'main').catch(() => null);
+      const latestMods = Array.isArray(latestDoc?.customized_modules)
+        ? (latestDoc.customized_modules.filter((m): m is string => typeof m === 'string'))
+        : [];
+      const siteMods = Array.isArray(site.customized_modules)
+        ? site.customized_modules.filter((m): m is string => typeof m === 'string')
+        : [];
+      const payload = sanitizeSiteSettingsPayload(
+        form as unknown as Record<string, unknown>,
+        [...siteMods, ...latestMods]
+      );
 
       await setSingleton('site_settings', 'main', payload);
       await logAdminActivity('update', 'site_settings', `Updated ${titles[mode].title}`);
@@ -1505,14 +1394,18 @@ export function AdminNavigationPage() {
   const handleMove = async (item: NavItem, dir: -1 | 1) => {
     setErrorMsg('');
     try {
-      const list = (await ensureMaterialized()).filter((n) => n.location === item.location);
-      list.sort((a, b) => a.display_order - b.display_order);
+      const list = [...(await ensureMaterialized())]
+        .filter((n) => n.location === item.location)
+        .sort((a, b) => a.display_order - b.display_order);
       const idx = list.findIndex((n) => n.id === item.id);
       const swapIdx = idx + dir;
       if (idx < 0 || swapIdx < 0 || swapIdx >= list.length) return;
-      const other = list[swapIdx];
-      await updateDocRecord('nav_items', item.id, { display_order: other.display_order });
-      await updateDocRecord('nav_items', other.id, { display_order: item.display_order });
+      [list[idx], list[swapIdx]] = [list[swapIdx], list[idx]];
+      await Promise.all(
+        list.map((nav, orderIdx) =>
+          updateDocRecord('nav_items', nav.id, { display_order: orderIdx + 1 })
+        )
+      );
       await logAdminActivity('update', 'nav_items', `Reordered link "${item.label}"`);
       await load();
       await reloadSite();
@@ -1942,10 +1835,12 @@ export function AdminHomepagePage() {
       const curr = list[index];
       const target = list[targetIdx];
       if (!curr || !target) return;
-      const currOrder = index + 1;
-      const targetOrder = targetIdx + 1;
-      await updateDocRecord('homepage_sections', curr.id, { display_order: targetOrder });
-      await updateDocRecord('homepage_sections', target.id, { display_order: currOrder });
+      [list[index], list[targetIdx]] = [list[targetIdx], list[index]];
+      await Promise.all(
+        list.map((secItem, orderIdx) =>
+          updateDocRecord('homepage_sections', secItem.id, { display_order: orderIdx + 1 })
+        )
+      );
       await logAdminActivity('update', 'homepage_sections', `Reordered section "${curr.title}"`);
       await load();
       await reloadSite();
@@ -2521,7 +2416,7 @@ export function AdminCampusPage() {
           title: str(s.title, 200),
           subtitle: str(s.subtitle, 400),
           body: str(s.body, 4000),
-          image_url: str(s.image_url, 1000),
+          image_url: str(s.image_url, 250000),
           button_label: str(s.button_label, 80),
           button_link: str(s.button_link, 200),
           display_order: Number(s.display_order) || 0,
@@ -2537,7 +2432,7 @@ export function AdminCampusPage() {
       title: str(target.title, 200),
       subtitle: str(target.subtitle, 400),
       body: str(target.body, 4000),
-      image_url: str(target.image_url, 1000),
+      image_url: str(target.image_url, 250000),
       button_label: str(target.button_label, 80),
       button_link: str(target.button_link, 200),
       display_order: Number(target.display_order) || 5,

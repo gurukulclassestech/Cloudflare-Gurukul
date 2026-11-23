@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MessageSquareQuote } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import { DEFAULT_TESTIMONIALS } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import {
   CardSkeletonGrid,
@@ -24,10 +24,21 @@ export function TestimonialsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPublished<Testimonial>('testimonials', 'display_order', 'asc', 100)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    const unsub = subscribePublished<Testimonial>(
+      'testimonials',
+      (rows) => {
+        setItems(rows);
+        setLoading(false);
+      },
+      'display_order',
+      'asc',
+      100,
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const isCustomized = site.customized_modules?.includes('testimonials');

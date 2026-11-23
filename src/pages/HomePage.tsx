@@ -27,6 +27,7 @@ import {
   DEFAULT_BLOGS,
   DEFAULT_COURSES,
   DEFAULT_EXAMS,
+  DEFAULT_HOMEPAGE_SECTIONS,
   DEFAULT_RESULT_CATEGORIES,
   DEFAULT_RESULTS,
   DEFAULT_TESTIMONIALS,
@@ -34,7 +35,7 @@ import {
   resolveResultSection,
   SITE_IMAGES,
 } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import { CampusSection } from '../components/CampusSection';
 import {
@@ -88,15 +89,46 @@ function HeroSection({ section }: { section: HomepageSection }) {
 
   const slides = banners.length > 0 ? banners : [];
   const current = slides[activeIndex % Math.max(1, slides.length)];
+  const defaultHero = DEFAULT_HOMEPAGE_SECTIONS[0];
+  const isFallbackBanner = !current || current.id === 'default-banner';
 
-  const title = current?.title || section.title;
+  const heroTitleEdited = section.title && section.title !== defaultHero.title;
+  const heroBodyEdited = section.body && section.body !== defaultHero.body;
+  const heroImageEdited = section.image_url && section.image_url !== defaultHero.image_url;
+  const heroBtnLabelEdited =
+    section.button_label && section.button_label !== defaultHero.button_label;
+  const heroBtnLinkEdited =
+    section.button_link && section.button_link !== defaultHero.button_link;
+
+  const title = isFallbackBanner
+    ? heroTitleEdited
+      ? section.title
+      : current?.title || section.title
+    : current?.title || section.title;
   const subtitle = current?.subtitle || section.subtitle;
-  const description = current?.description || section.body;
-  const imageUrl = current?.image_url || section.image_url || SITE_IMAGES.hero;
+  const description = isFallbackBanner
+    ? heroBodyEdited
+      ? section.body
+      : current?.description || section.body
+    : current?.description || section.body;
+  const imageUrl: string =
+    isFallbackBanner && heroImageEdited && section.image_url
+      ? section.image_url
+      : current?.image_url || section.image_url || SITE_IMAGES.hero;
   const mobileImageUrl = current?.mobile_image_url || '';
-  const primaryLabel = current?.primary_label || section.button_label || 'Apply for admission';
-  const primaryUrl = current?.primary_url || section.button_link || '/admission';
-  const secondaryLabel = current?.secondary_label || 'Explore courses';
+  const primaryLabel: string =
+    isFallbackBanner && heroBtnLabelEdited && section.button_label
+      ? section.button_label
+      : current?.primary_label || section.button_label || 'Apply for admission';
+  const primaryUrl: string =
+    isFallbackBanner && heroBtnLinkEdited && section.button_link
+      ? section.button_link
+      : current?.primary_url || section.button_link || '/admission';
+  const secondaryLabel = isFallbackBanner
+    ? heroBtnLabelEdited
+      ? ''
+      : current?.secondary_label || 'Explore courses'
+    : current?.secondary_label || 'Explore courses';
   const secondaryUrl = current?.secondary_url || '/courses';
   const deadline = current?.deadline;
 
@@ -604,34 +636,105 @@ export function HomePage() {
   const [activeImage, setActiveImage] = useState<GalleryMedia | null>(null);
 
   useEffect(() => {
-    let active = true;
-    Promise.all([
-      fetchPublished<Course>('courses', 'display_order', 'asc', 6).catch(() => []),
-      fetchPublished<FacultyMember>('faculty', 'display_order', 'asc', 4).catch(() => []),
-      fetchPublished<Exam>('exams', 'display_order', 'asc', 6).catch(() => []),
-      fetchPublished<Lecture>('lectures', 'display_order', 'asc', 3).catch(() => []),
-      fetchPublished<StudentResult>('results', 'display_order', 'asc', 6).catch(() => []),
-      fetchPublished<Testimonial>('testimonials', 'display_order', 'asc', 3).catch(() => []),
-      fetchPublished<BlogPost>('blogs', 'published_date', 'desc', 3).catch(() => []),
-      fetchPublished<GalleryMedia>('gallery_media', 'display_order', 'asc', 8).catch(() => []),
-    ])
-      .then(([c, f, e, l, r, t, b, g]) => {
-        if (!active) return;
-        setCourses(c);
-        setFaculty(f);
-        setExams(e);
-        setLectures(l);
-        setResults(r);
-        setTestimonials(t);
-        setBlogs(b);
-        setGallery(g.filter((item) => item.media_type !== 'video'));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const settled = new Set<string>();
+    const markSettled = (k: string) => {
+      settled.add(k);
+      if (settled.size >= 8) setLoading(false);
+    };
+
+    const unsubs = [
+      subscribePublished<Course>(
+        'courses',
+        (rows) => {
+          setCourses(rows);
+          markSettled('courses');
+        },
+        'display_order',
+        'asc',
+        6,
+        () => markSettled('courses')
+      ),
+      subscribePublished<FacultyMember>(
+        'faculty',
+        (rows) => {
+          setFaculty(rows);
+          markSettled('faculty');
+        },
+        'display_order',
+        'asc',
+        4,
+        () => markSettled('faculty')
+      ),
+      subscribePublished<Exam>(
+        'exams',
+        (rows) => {
+          setExams(rows);
+          markSettled('exams');
+        },
+        'display_order',
+        'asc',
+        6,
+        () => markSettled('exams')
+      ),
+      subscribePublished<Lecture>(
+        'lectures',
+        (rows) => {
+          setLectures(rows);
+          markSettled('lectures');
+        },
+        'display_order',
+        'asc',
+        3,
+        () => markSettled('lectures')
+      ),
+      subscribePublished<StudentResult>(
+        'results',
+        (rows) => {
+          setResults(rows);
+          markSettled('results');
+        },
+        'display_order',
+        'asc',
+        6,
+        () => markSettled('results')
+      ),
+      subscribePublished<Testimonial>(
+        'testimonials',
+        (rows) => {
+          setTestimonials(rows);
+          markSettled('testimonials');
+        },
+        'display_order',
+        'asc',
+        3,
+        () => markSettled('testimonials')
+      ),
+      subscribePublished<BlogPost>(
+        'blogs',
+        (rows) => {
+          setBlogs(rows);
+          markSettled('blogs');
+        },
+        'published_date',
+        'desc',
+        3,
+        () => markSettled('blogs')
+      ),
+      subscribePublished<GalleryMedia>(
+        'gallery_media',
+        (rows) => {
+          setGallery(rows.filter((item) => item.media_type !== 'video'));
+          markSettled('gallery');
+        },
+        'display_order',
+        'asc',
+        8,
+        () => markSettled('gallery')
+      ),
+    ];
 
     return () => {
-      active = false;
+      unsubs.forEach((u) => u());
     };
   }, []);
 

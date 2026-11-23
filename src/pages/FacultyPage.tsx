@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import {
   CardSkeletonGrid,
@@ -21,10 +21,21 @@ export function FacultyPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPublished<FacultyMember>('faculty', 'display_order', 'asc', 100)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    const unsub = subscribePublished<FacultyMember>(
+      'faculty',
+      (rows) => {
+        setItems(rows);
+        setLoading(false);
+      },
+      'display_order',
+      'asc',
+      100,
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   return (

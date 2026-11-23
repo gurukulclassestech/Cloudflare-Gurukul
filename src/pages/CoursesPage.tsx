@@ -9,7 +9,7 @@ import {
   DEFAULT_COURSES,
   DEFAULT_SITE_SETTINGS,
 } from '../data/defaults';
-import { fetchPublished } from '../lib/firestoreApi';
+import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import { CampusSection } from '../components/CampusSection';
 import {
@@ -98,10 +98,21 @@ export function CoursesPage() {
   const [classFilter, setClassFilter] = useState('');
 
   useEffect(() => {
-    fetchPublished<Course>('courses', 'display_order', 'asc', 100)
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    const unsub = subscribePublished<Course>(
+      'courses',
+      (rows) => {
+        setItems(rows);
+        setLoading(false);
+      },
+      'display_order',
+      'asc',
+      100,
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const coursesCustomized = Boolean(site.customized_modules?.includes('courses'));

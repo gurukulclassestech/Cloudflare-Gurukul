@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Newspaper, User } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import { DEFAULT_BLOGS } from '../data/defaults';
-import { fetchPublishedBlogBySlug } from '../lib/firestoreApi';
+import { fetchPublishedBlogBySlug, onContentUpdated } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import { EmptyState, RichInlineText, formatDate } from '../components/CommonUI';
 import { SafeImage } from '../components/SafeImage';
@@ -30,29 +30,46 @@ export function BlogDetailPage() {
     }
     let active = true;
     setLoading(true);
-    fetchPublishedBlogBySlug<BlogPost>(slug)
-      .then((doc) => {
-        if (!active) return;
-        if (doc && doc.is_published !== false) {
-          setPost(doc);
-        } else if (!isCustomized) {
-          setPost(DEFAULT_BLOGS.find((b) => b.slug === slug || b.id === slug) || null);
-        } else {
-          setPost(null);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setPost(
-            isCustomized ? null : DEFAULT_BLOGS.find((b) => b.slug === slug || b.id === slug) || null
-          );
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+
+    const loadPost = () => {
+      fetchPublishedBlogBySlug<BlogPost>(slug)
+        .then((doc) => {
+          if (!active) return;
+          if (doc && doc.is_published !== false) {
+            setPost(doc);
+          } else if (!isCustomized) {
+            setPost(DEFAULT_BLOGS.find((b) => b.slug === slug || b.id === slug) || null);
+          } else {
+            setPost(null);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setPost(
+              isCustomized ? null : DEFAULT_BLOGS.find((b) => b.slug === slug || b.id === slug) || null
+            );
+          }
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    };
+
+    loadPost();
+    const unsubSync = onContentUpdated((src) => {
+      if (src === 'all' || src === 'blogs' || src === 'site_settings') {
+        loadPost();
+      }
+    });
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadPost();
+    };
+    window.addEventListener('focus', onVisible);
+
     return () => {
       active = false;
+      unsubSync();
+      window.removeEventListener('focus', onVisible);
     };
   }, [slug, isCustomized]);
 

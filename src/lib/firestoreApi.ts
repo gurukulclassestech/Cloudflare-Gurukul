@@ -6,6 +6,7 @@ import {
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -14,11 +15,237 @@ import {
   type DocumentData,
   type QueryConstraint,
 } from 'firebase/firestore';
-import { DEFAULT_SITE_SETTINGS } from '../data/defaults';
+import { DEFAULT_COURSE_CATEGORY_DESCRIPTIONS, DEFAULT_SITE_SETTINGS } from '../data/defaults';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
+
+const SYNC_CHANNEL_NAME = 'gurukul_cms_sync';
+const SYNC_STORAGE_KEY = 'gurukul_cms_sync_ts';
+const SYNC_DOM_EVENT = 'gurukul:content-updated';
+
+export function notifyContentUpdated(sourceCollection = 'all'): void {
+  if (typeof window === 'undefined') return;
+  const payload = { source: sourceCollection, ts: Date.now() };
+  try {
+    window.dispatchEvent(new CustomEvent(SYNC_DOM_EVENT, { detail: payload }));
+  } catch {
+    // Ignore event dispatch errors
+  }
+  try {
+    if ('BroadcastChannel' in window) {
+      const ch = new BroadcastChannel(SYNC_CHANNEL_NAME);
+      ch.postMessage(payload);
+      ch.close();
+    }
+  } catch {
+    // Ignore BroadcastChannel errors
+  }
+  try {
+    window.localStorage.setItem(SYNC_STORAGE_KEY, `${payload.ts}:${sourceCollection}`);
+  } catch {
+    // Ignore storage quota / private mode errors
+  }
+}
+
+export function onContentUpdated(handler: (sourceCollection: string) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const onDom = (e: Event) => {
+    const detail = (e as CustomEvent<{ source?: string }>).detail;
+    handler(detail?.source || 'all');
+  };
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === SYNC_STORAGE_KEY && e.newValue) {
+      const idx = e.newValue.indexOf(':');
+      handler(idx >= 0 ? e.newValue.slice(idx + 1) : 'all');
+    }
+  };
+  let ch: BroadcastChannel | null = null;
+  const onChannel = (e: MessageEvent<{ source?: string }>) => {
+    handler(e.data?.source || 'all');
+  };
+  window.addEventListener(SYNC_DOM_EVENT, onDom);
+  window.addEventListener('storage', onStorage);
+  try {
+    if ('BroadcastChannel' in window) {
+      ch = new BroadcastChannel(SYNC_CHANNEL_NAME);
+      ch.addEventListener('message', onChannel);
+    }
+  } catch {
+    ch = null;
+  }
+  return () => {
+    window.removeEventListener(SYNC_DOM_EVENT, onDom);
+    window.removeEventListener('storage', onStorage);
+    if (ch) {
+      ch.removeEventListener('message', onChannel);
+      ch.close();
+    }
+  };
+}
 
 export function sanitizeId(raw: string): string {
   return raw.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 128) || 'item';
+}
+
+/**
+ * Produces a strictly allowlisted `site_settings` payload matching `isValidSiteSettings`
+ * in `firestore.rules`, stripping any legacy/unknown keys (like `id`) and enforcing bounds.
+ */
+export function sanitizeSiteSettingsPayload(
+  raw: Record<string, unknown>,
+  extraModules: string[] = []
+): Record<string, unknown> {
+  const merged = { ...DEFAULT_SITE_SETTINGS, ...raw } as Record<string, unknown>;
+  const str = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+  const reqField = (v: unknown, fallback: string, min: number, max: number) => {
+    const cleaned = str(v, max);
+    return cleaned.length >= min ? cleaned : fallback.slice(0, max);
+  };
+
+  const highlightsRaw = Array.isArray(merged.about_highlights) ? merged.about_highlights : [];
+  const highlights = highlightsRaw
+    .slice(0, 12)
+    .map((h) => {
+      const item = (h && typeof h === 'object' ? h : {}) as Record<string, unknown>;
+      return {
+        value: str(item.value, 60),
+        label: str(item.label, 120),
+      };
+    })
+    .filter((h) => h.value || h.label);
+
+  const catDescRaw = Array.isArray(merged.courses_category_descriptions)
+    ? merged.courses_category_descriptions
+    : DEFAULT_COURSE_CATEGORY_DESCRIPTIONS;
+  const categoryDescriptions = catDescRaw
+    .slice(0, 12)
+    .map((c) => {
+      const item = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
+      return {
+        category: str(item.category, 120),
+        description: str(item.description, 600),
+      };
+    })
+    .filter((c) => c.category || c.description);
+
+  const approachRaw = Array.isArray(merged.courses_approach_steps)
+    ? merged.courses_approach_steps
+    : [];
+  const approachSteps = approachRaw
+    .slice(0, 12)
+    .map((s) => {
+      const item = (s && typeof s === 'object' ? s : {}) as Record<string, unknown>;
+      return {
+        title: str(item.title, 80),
+        description: str(item.description, 300),
+      };
+    })
+    .filter((s) => s.title || s.description);
+
+  const prevMods = Array.isArray(merged.customized_modules)
+    ? merged.customized_modules.filter((m): m is string => typeof m === 'string' && m.length > 0)
+    : [];
+  const customizedModules = Array.from(new Set([...prevMods, ...extraModules])).slice(0, 30);
+
+  const freq =
+    merged.popup_frequency === 'once' || merged.popup_frequency === 'always'
+      ? merged.popup_frequency
+      : 'session';
+
+  return {
+    institute_name: reqField(merged.institute_name, DEFAULT_SITE_SETTINGS.institute_name, 2, 120),
+    tagline: str(merged.tagline, 400),
+    about_heading: str(merged.about_heading, 200),
+    about_intro: str(merged.about_intro, 600),
+    about_mission: str(merged.about_mission, 400),
+    about_story: str(merged.about_story, 8000),
+    about_highlights: highlights,
+    courses_eyebrow: str(merged.courses_eyebrow, 100),
+    courses_title: str(merged.courses_title, 200),
+    courses_description: str(merged.courses_description, 600),
+    courses_badge: str(merged.courses_badge, 160),
+    courses_category_descriptions: categoryDescriptions,
+    courses_approach_eyebrow: str(merged.courses_approach_eyebrow, 100),
+    courses_approach_title: str(merged.courses_approach_title, 200),
+    courses_approach_description: str(merged.courses_approach_description, 600),
+    courses_approach_steps: approachSteps,
+    logo_url: str(merged.logo_url, 250000),
+    logo_width: str(merged.logo_width || '90', 10),
+    logo_height: str(merged.logo_height || '55', 10),
+    favicon_url: str(merged.favicon_url, 250000),
+    phone: reqField(merged.phone, DEFAULT_SITE_SETTINGS.phone, 5, 30),
+    email: reqField(merged.email, DEFAULT_SITE_SETTINGS.email, 5, 120),
+    whatsapp: str(merged.whatsapp, 30),
+    whatsapp_float_enabled: merged.whatsapp_float_enabled !== false,
+    whatsapp_prefill_message: str(merged.whatsapp_prefill_message, 300),
+    address: reqField(merged.address, DEFAULT_SITE_SETTINGS.address, 3, 300),
+    map_embed_url: str(merged.map_embed_url, 1000),
+    map_link: str(merged.map_link, 1000),
+    office_hours: str(merged.office_hours, 160),
+    announcement_enabled: Boolean(merged.announcement_enabled),
+    announcement_text: str(merged.announcement_text, 300),
+    announcement_bg_color: str(merged.announcement_bg_color, 20),
+    announcement_text_color: str(merged.announcement_text_color, 20),
+    header_bg_color: str(merged.header_bg_color, 20),
+    header_text_color: str(merged.header_text_color, 20),
+    footer_about: str(merged.footer_about, 400),
+    footer_copyright: str(merged.footer_copyright, 200),
+    facebook_url: str(merged.facebook_url, 500),
+    instagram_url: str(merged.instagram_url, 500),
+    youtube_url: str(merged.youtube_url, 500),
+    twitter_url: str(merged.twitter_url, 500),
+    seo_title: str(merged.seo_title, 160),
+    seo_description: str(merged.seo_description, 320),
+    seo_keywords: str(merged.seo_keywords, 300),
+    og_image_url: str(merged.og_image_url, 250000),
+    popup_enabled: Boolean(merged.popup_enabled),
+    popup_title: str(merged.popup_title, 160),
+    popup_body: str(merged.popup_body, 500),
+    popup_cta_label: str(merged.popup_cta_label, 60),
+    popup_cta_link: str(merged.popup_cta_link, 200),
+    popup_submit_label: str(merged.popup_submit_label, 80),
+    popup_image_url: str(merged.popup_image_url, 250000),
+    popup_delay_seconds: Math.max(0, Math.min(120, Number(merged.popup_delay_seconds) || 5)),
+    popup_frequency: freq,
+    popup_show_parent_name: merged.popup_show_parent_name !== false,
+    popup_show_email: merged.popup_show_email !== false,
+    popup_show_class: merged.popup_show_class !== false,
+    popup_show_course: merged.popup_show_course !== false,
+    popup_show_batch: merged.popup_show_batch !== false,
+    popup_show_message: Boolean(merged.popup_show_message),
+    payments_enabled: Boolean(merged.payments_enabled),
+    payment_fee_label: str(merged.payment_fee_label, 120),
+    upi_id: str(merged.upi_id, 120),
+    payment_qr_url: str(merged.payment_qr_url, 250000),
+    bank_details: str(merged.bank_details, 600),
+    payment_instructions: str(merged.payment_instructions, 600),
+    header_cta_enabled: merged.header_cta_enabled !== false,
+    header_cta_label: str(merged.header_cta_label || 'Apply Now', 60),
+    header_cta_link: str(merged.header_cta_link || '/admission', 200),
+    float_apply_enabled: merged.float_apply_enabled !== false,
+    float_apply_label: str(merged.float_apply_label || 'Apply Now', 60),
+    float_apply_link: str(merged.float_apply_link || '/admission', 200),
+    customized_modules: customizedModules,
+    privacy_content: str(merged.privacy_content, 5000),
+    terms_content: str(merged.terms_content, 5000),
+  };
+}
+
+function sortRows<T extends { id: string }>(
+  rows: T[],
+  sortField?: string,
+  sortDir: 'asc' | 'desc' = 'asc'
+): T[] {
+  if (!sortField) return rows;
+  return [...rows].sort((a, b) => {
+    const av = (a as Record<string, unknown>)[sortField];
+    const bv = (b as Record<string, unknown>)[sortField];
+    if (typeof av === 'number' && typeof bv === 'number') {
+      return sortDir === 'asc' ? av - bv : bv - av;
+    }
+    const as = String(av ?? '');
+    const bs = String(bv ?? '');
+    return sortDir === 'asc' ? as.localeCompare(bs) : bs.localeCompare(as);
+  });
 }
 
 export async function getSingleton<T>(collectionName: string, docId: string): Promise<T | null> {
@@ -39,7 +266,10 @@ export async function setSingleton(
 ): Promise<void> {
   const path = `${collectionName}/${docId}`;
   try {
-    await setDoc(doc(db, collectionName, docId), { ...data, updated_at: serverTimestamp() });
+    const cleanData = { ...data };
+    delete cleanData.id;
+    await setDoc(doc(db, collectionName, docId), { ...cleanData, updated_at: serverTimestamp() });
+    notifyContentUpdated(collectionName);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -50,20 +280,37 @@ export async function markModuleCustomized(moduleKeys: string | string[]): Promi
   try {
     const ref = doc(db, 'site_settings', 'main');
     const snap = await getDoc(ref);
-    const currentData = snap.exists() ? (snap.data() as Record<string, unknown>) : DEFAULT_SITE_SETTINGS;
-    const prev = Array.isArray(currentData.customized_modules)
-      ? (currentData.customized_modules as string[])
-      : [];
-    const merged = Array.from(new Set([...prev, ...keys])).slice(0, 30);
+    const currentData = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
+    const sanitized = sanitizeSiteSettingsPayload(currentData, keys);
     await setDoc(ref, {
-      ...DEFAULT_SITE_SETTINGS,
-      ...currentData,
-      customized_modules: merged,
+      ...sanitized,
       updated_at: serverTimestamp(),
     });
-  } catch {
-    // Non-blocking sync if admin lacks write or offline
+    notifyContentUpdated('site_settings');
+  } catch (err) {
+    console.warn('Could not mark module customized:', err);
   }
+}
+
+export function subscribeSingleton<T>(
+  collectionName: string,
+  docId: string,
+  onData: (data: T | null) => void,
+  onError?: (error: unknown) => void
+): () => void {
+  return onSnapshot(
+    doc(db, collectionName, docId),
+    (snap) => {
+      if (!snap.exists()) {
+        onData(null);
+      } else {
+        onData({ id: snap.id, ...snap.data() } as T);
+      }
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
 }
 
 export async function fetchCollection<T extends { id: string }>(
@@ -78,22 +325,33 @@ export async function fetchCollection<T extends { id: string }>(
       : collection(db, collectionName);
     const snap = await getDocs(q);
     const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as T);
-    if (sortField) {
-      rows.sort((a, b) => {
-        const av = (a as Record<string, unknown>)[sortField];
-        const bv = (b as Record<string, unknown>)[sortField];
-        if (typeof av === 'number' && typeof bv === 'number') {
-          return sortDir === 'asc' ? av - bv : bv - av;
-        }
-        const as = String(av ?? '');
-        const bs = String(bv ?? '');
-        return sortDir === 'asc' ? as.localeCompare(bs) : bs.localeCompare(as);
-      });
-    }
-    return rows;
+    return sortRows(rows, sortField, sortDir);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, collectionName);
   }
+}
+
+export function subscribeCollection<T extends { id: string }>(
+  collectionName: string,
+  constraints: QueryConstraint[],
+  onData: (rows: T[]) => void,
+  sortField?: string,
+  sortDir: 'asc' | 'desc' = 'asc',
+  onError?: (error: unknown) => void
+): () => void {
+  const q = constraints.length
+    ? query(collection(db, collectionName), ...constraints)
+    : collection(db, collectionName);
+  return onSnapshot(
+    q,
+    (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }) as T);
+      onData(sortRows(rows, sortField, sortDir));
+    },
+    (error) => {
+      if (onError) onError(error);
+    }
+  );
 }
 
 export async function fetchPublished<T extends { id: string }>(
@@ -102,11 +360,32 @@ export async function fetchPublished<T extends { id: string }>(
   sortDir: 'asc' | 'desc' = 'asc',
   maxItems = 100
 ): Promise<T[]> {
-  return fetchCollection<T>(
+  const fetchCap = Math.max(maxItems, 200);
+  const rows = await fetchCollection<T>(
     collectionName,
-    [where('is_published', '==', true), limit(maxItems)],
+    [where('is_published', '==', true), limit(fetchCap)],
     sortField,
     sortDir
+  );
+  return rows.slice(0, maxItems);
+}
+
+export function subscribePublished<T extends { id: string }>(
+  collectionName: string,
+  onData: (rows: T[]) => void,
+  sortField = 'display_order',
+  sortDir: 'asc' | 'desc' = 'asc',
+  maxItems = 100,
+  onError?: (error: unknown) => void
+): () => void {
+  const fetchCap = Math.max(maxItems, 200);
+  return subscribeCollection<T>(
+    collectionName,
+    [where('is_published', '==', true), limit(fetchCap)],
+    (rows) => onData(rows.slice(0, maxItems)),
+    sortField,
+    sortDir,
+    onError
   );
 }
 
@@ -149,9 +428,11 @@ export async function createDocRecord(
     if (customId) {
       const safeId = sanitizeId(customId);
       await setDoc(doc(db, collectionName, safeId), data);
+      notifyContentUpdated(collectionName);
       return safeId;
     }
     const ref = await addDoc(collection(db, collectionName), data);
+    notifyContentUpdated(collectionName);
     return ref.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, collectionName);
@@ -166,6 +447,7 @@ export async function updateDocRecord(
   const path = `${collectionName}/${id}`;
   try {
     await updateDoc(doc(db, collectionName, id), data);
+    notifyContentUpdated(collectionName);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
@@ -179,6 +461,7 @@ export async function setDocRecord(
   const path = `${collectionName}/${id}`;
   try {
     await setDoc(doc(db, collectionName, id), data);
+    notifyContentUpdated(collectionName);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -188,6 +471,7 @@ export async function deleteDocRecord(collectionName: string, id: string): Promi
   const path = `${collectionName}/${id}`;
   try {
     await deleteDoc(doc(db, collectionName, id));
+    notifyContentUpdated(collectionName);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }

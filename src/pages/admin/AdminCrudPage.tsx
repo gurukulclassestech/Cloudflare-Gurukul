@@ -414,13 +414,74 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
     return msg;
   };
 
+  const FIELD_MAX_LEN: Record<string, number> = {
+    title: 200,
+    name: 160,
+    slug: 160,
+    category: 120,
+    course_category: 80,
+    class_level: 80,
+    duration: 80,
+    target_exams: 200,
+    batch_info: 160,
+    subjects: 300,
+    fee: 80,
+    description: 4000,
+    highlights: 2000,
+    eligibility: 1500,
+    methodology: 2000,
+    exam_preparation: 2000,
+    subtitle: 400,
+    primary_label: 60,
+    primary_url: 200,
+    secondary_label: 60,
+    secondary_url: 200,
+    deadline: 40,
+    exam_date: 40,
+    exam_time: 60,
+    start_time: 40,
+    syllabus: 1000,
+    instructions: 2000,
+    registration_link: 400,
+    registration_url: 400,
+    subject: 80,
+    teacher_name: 100,
+    video_url: 500,
+    student_name: 120,
+    achievement_title: 180,
+    score: 60,
+    academic_year: 30,
+    document_url: 1000,
+    role: 100,
+    qualification: 160,
+    experience: 80,
+    bio: 1200,
+    display_name: 120,
+    role_or_class: 120,
+    quote: 1200,
+    author: 100,
+    published_date: 40,
+    excerpt: 400,
+    content: 12000,
+    seo_title: 160,
+    seo_description: 320,
+    image_url: 250000,
+    mobile_image_url: 250000,
+    thumbnail_url: 250000,
+    photo_url: 250000,
+    featured_image_url: 250000,
+  };
+
   const buildPayloadFromRecord = (rec: Record<string, unknown>) => {
     const payload: Record<string, unknown> = {};
     for (const f of cfg.fields) {
       const v = rec[f.key];
       if (f.type === 'number') payload[f.key] = Number(v) || 0;
       else if (f.type === 'boolean') payload[f.key] = Boolean(v);
-      else payload[f.key] = typeof v === 'string' ? v.trim() : String(v ?? '');
+      else {
+        const maxLen = FIELD_MAX_LEN[f.key] || 1000;
+        payload[f.key] = (typeof v === 'string' ? v.trim() : String(v ?? '')).slice(0, maxLen);
+      }
     }
     return payload;
   };
@@ -512,19 +573,25 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
       await ensureMaterialized();
       const payload = buildPayloadFromRecord(form);
 
-      if (module === 'blogs' && !payload.slug && typeof payload.title === 'string') {
-        payload.slug =
-          payload.title
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '') || `post-${Date.now()}`;
+      if (module === 'blogs') {
+        const rawSlug = String(payload.slug || payload.title || '');
+        const cleanSlug = rawSlug
+          .toLowerCase()
+          .replace(/[^a-z0-9-]+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 160);
+        payload.slug = cleanSlug.length >= 2 ? cleanSlug : `post-${Date.now()}`;
       }
-      if (module === 'courses' && !payload.slug && typeof payload.name === 'string') {
-        payload.slug =
-          payload.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '') || `course-${Date.now()}`;
+      if (module === 'courses') {
+        const rawSlug = String(payload.slug || payload.name || '');
+        const cleanSlug = rawSlug
+          .toLowerCase()
+          .replace(/[^a-z0-9-]+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 160);
+        payload.slug = cleanSlug || `course-${Date.now()}`;
       }
       if (module === 'testimonials') {
         payload.rating = Math.min(5, Math.max(1, Number(payload.rating) || 5));
