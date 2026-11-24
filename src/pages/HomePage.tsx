@@ -28,12 +28,12 @@ import {
   DEFAULT_COURSES,
   DEFAULT_EXAMS,
   DEFAULT_HOMEPAGE_SECTIONS,
-  DEFAULT_RESULT_CATEGORIES,
   DEFAULT_TESTIMONIALS,
   REPRESENTATIVE_GALLERY,
   getResultSectionSubtitle,
   mergePendingResults,
   resolveResultSection,
+  sortResultSectionNames,
   SITE_IMAGES,
 } from '../data/defaults';
 import { subscribePublished } from '../lib/firestoreApi';
@@ -424,16 +424,13 @@ function AchievementsHomeSection({
   results: StudentResult[];
   loading: boolean;
 }) {
+  const { site } = useSite();
   const [selectedSection, setSelectedSection] = useState('');
 
-  const resultSections = [...new Set(results.map((r) => resolveResultSection(r)))].sort((a, b) => {
-    const ia = DEFAULT_RESULT_CATEGORIES.indexOf(a);
-    const ib = DEFAULT_RESULT_CATEGORIES.indexOf(b);
-    if (ia !== -1 || ib !== -1) {
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-    }
-    return a.localeCompare(b);
-  });
+  const resultSections = sortResultSectionNames(
+    [...new Set(results.map((r) => resolveResultSection(r)))],
+    site.result_section_order
+  );
 
   const visibleResults = selectedSection
     ? results.filter((r) => resolveResultSection(r) === selectedSection)

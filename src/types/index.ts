@@ -87,6 +87,7 @@ export interface SiteSettings {
   float_apply_label?: string;
   float_apply_link?: string;
   customized_modules?: string[];
+  result_section_order?: string[];
   privacy_content: string;
   terms_content: string;
 }

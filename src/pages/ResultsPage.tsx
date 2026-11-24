@@ -2,25 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { Award, ExternalLink, X } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import {
-  DEFAULT_RESULT_CATEGORIES,
   getResultSectionSubtitle,
   mergePendingResults,
   resolveResultSection,
+  sortResultSectionNames,
 } from '../data/defaults';
 import { subscribePublished } from '../lib/firestoreApi';
 import { usePageSeo } from '../lib/seo';
 import { CardSkeletonGrid, EmptyState, PageHeroBanner } from '../components/CommonUI';
 import { SafeImage } from '../components/SafeImage';
 import type { StudentResult } from '../types';
-
-function sortSectionNames(a: string, b: string): number {
-  const ia = DEFAULT_RESULT_CATEGORIES.indexOf(a);
-  const ib = DEFAULT_RESULT_CATEGORIES.indexOf(b);
-  if (ia !== -1 || ib !== -1) {
-    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-  }
-  return a.localeCompare(b);
-}
 
 export function ResultsPage() {
   const { site, getPageText } = useSite();
@@ -54,8 +45,12 @@ export function ResultsPage() {
   const displayItems = mergePendingResults(items, site.customized_modules);
 
   const sections = useMemo(
-    () => [...new Set(displayItems.map((r) => resolveResultSection(r)))].sort(sortSectionNames),
-    [displayItems]
+    () =>
+      sortResultSectionNames(
+        [...new Set(displayItems.map((r) => resolveResultSection(r)))],
+        site.result_section_order
+      ),
+    [displayItems, site.result_section_order]
   );
 
   const years = useMemo(
@@ -77,13 +72,12 @@ export function ResultsPage() {
       arr.push(res);
       map.set(sec, arr);
     }
-    return [...map.entries()]
-      .sort(([a], [b]) => sortSectionNames(a, b))
-      .map(([sectionTitle, sectionResults]) => ({
-        title: sectionTitle,
-        results: sectionResults,
-      }));
-  }, [filtered]);
+    const orderedNames = sortResultSectionNames([...map.keys()], site.result_section_order);
+    return orderedNames.map((sectionTitle) => ({
+      title: sectionTitle,
+      results: map.get(sectionTitle) || [],
+    }));
+  }, [filtered, site.result_section_order]);
 
   return (
     <>

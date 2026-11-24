@@ -102,6 +102,26 @@ export function resolveResultSection(res: Pick<StudentResult, 'category' | 'achi
   return 'Other Achievements';
 }
 
+export function sortResultSectionNames(sections: string[], customOrder?: string[]): string[] {
+  const orderList =
+    Array.isArray(customOrder) && customOrder.length > 0
+      ? customOrder
+      : DEFAULT_RESULT_CATEGORIES;
+  return [...sections].sort((a, b) => {
+    const ia = orderList.indexOf(a);
+    const ib = orderList.indexOf(b);
+    if (ia !== -1 || ib !== -1) {
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    }
+    const da = DEFAULT_RESULT_CATEGORIES.indexOf(a);
+    const db = DEFAULT_RESULT_CATEGORIES.indexOf(b);
+    if (da !== -1 || db !== -1) {
+      return (da === -1 ? 999 : da) - (db === -1 ? 999 : db);
+    }
+    return a.localeCompare(b);
+  });
+}
+
 export const DEFAULT_COURSE_CATEGORY_DESCRIPTIONS = [
   {
     category: 'IIT-JEE & NEET Two-Year Integrated Programme',
@@ -238,6 +258,7 @@ At Gurukul Classes, we don't just prepare students for examinations; we prepare 
   float_apply_label: 'Apply Now',
   float_apply_link: '/admission',
   customized_modules: [],
+  result_section_order: DEFAULT_RESULT_CATEGORIES,
   privacy_content:
     'We collect only the information you submit through our enquiry and admission forms — name, contact details, class and course interest — so that our team can respond to you. Enquiry records are visible only to authorised institute staff. We do not sell or share your details with third parties. Photographs of students are published only with written permission. You may ask us to correct or remove your information at any time by contacting the institute.',
   terms_content:

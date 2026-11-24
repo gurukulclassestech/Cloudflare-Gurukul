@@ -18,6 +18,7 @@ import {
 import {
   DEFAULT_COURSE_CATEGORY_DESCRIPTIONS,
   DEFAULT_PAGE_TEXTS,
+  DEFAULT_RESULT_CATEGORIES,
   DEFAULT_SITE_SETTINGS,
 } from '../data/defaults';
 import type { PageText, PageTextKey } from '../types';
@@ -151,6 +152,18 @@ export function sanitizeSiteSettingsPayload(
     : [];
   const customizedModules = Array.from(new Set([...prevMods, ...extraModules])).slice(0, 30);
 
+  const rawSectionOrder = Array.isArray(merged.result_section_order)
+    ? merged.result_section_order
+    : DEFAULT_RESULT_CATEGORIES;
+  const resultSectionOrder = Array.from(
+    new Set(
+      rawSectionOrder
+        .filter((s): s is string => typeof s === 'string')
+        .map((s) => s.trim().slice(0, 80))
+        .filter(Boolean)
+    )
+  ).slice(0, 30);
+
   const freq =
     merged.popup_frequency === 'once' || merged.popup_frequency === 'always'
       ? merged.popup_frequency
@@ -230,6 +243,7 @@ export function sanitizeSiteSettingsPayload(
     float_apply_label: str(merged.float_apply_label || 'Apply Now', 60),
     float_apply_link: str(merged.float_apply_link || '/admission', 200),
     customized_modules: customizedModules,
+    result_section_order: resultSectionOrder,
     privacy_content: str(merged.privacy_content, 5000),
     terms_content: str(merged.terms_content, 5000),
   };

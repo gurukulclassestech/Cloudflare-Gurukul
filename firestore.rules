@@ -89,7 +89,7 @@ service cloud.firestore {
           'payments_enabled', 'payment_fee_label', 'upi_id', 'payment_qr_url', 'bank_details', 'payment_instructions',
           'header_cta_enabled', 'header_cta_label', 'header_cta_link',
           'float_apply_enabled', 'float_apply_label', 'float_apply_link',
-          'customized_modules',
+          'customized_modules', 'result_section_order',
           'privacy_content', 'terms_content', 'updated_at'
         ]) &&
         reqStr(data, 'institute_name', 2, 120) &&
@@ -118,6 +118,7 @@ service cloud.firestore {
         optStr(data, 'bank_details', 600) &&
         optStr(data, 'payment_instructions', 600) &&
         (!('customized_modules' in data) || (data.customized_modules is list && data.customized_modules.size() <= 30 && (data.customized_modules.size() == 0 || data.customized_modules[0] is string))) &&
+        (!('result_section_order' in data) || (data.result_section_order is list && data.result_section_order.size() <= 30 && (data.result_section_order.size() == 0 || data.result_section_order[0] is string))) &&
         optStr(data, 'privacy_content', 5000) &&
         optStr(data, 'terms_content', 5000) &&
         (!('updated_at' in data) || data.updated_at is timestamp);

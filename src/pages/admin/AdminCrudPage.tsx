@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
+  Check,
+  ListOrdered,
   Loader2,
   Pencil,
   Plus,
@@ -23,14 +25,19 @@ import {
   DEFAULT_TESTIMONIALS,
   LATEST_UPLOADED_RESULTS,
   RESULTS_BATCH_SYNC_KEY,
+  resolveResultSection,
+  sortResultSectionNames,
 } from '../../data/defaults';
 import {
   createDocRecord,
   deleteDocRecord,
   fetchCollection,
+  getSingleton,
   logAdminActivity,
   markModuleCustomized,
+  sanitizeSiteSettingsPayload,
   setDocRecord,
+  setSingleton,
   updateDocRecord,
 } from '../../lib/firestoreApi';
 import { usePageSeo } from '../../lib/seo';
@@ -383,6 +390,63 @@ function getModuleDefaults(module: CrudModuleKey): Array<Record<string, unknown>
   }
 }
 
+function SequenceNumberInput({
+  value,
+  max,
+  disabled,
+  label,
+  onCommit,
+}: {
+  value: number;
+  max: number;
+  disabled?: boolean;
+  label: string;
+  onCommit: (targetPos: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commit = () => {
+    const parsed = parseInt(draft.trim(), 10);
+    if (!Number.isFinite(parsed) || max < 1) {
+      setDraft(String(value));
+      return;
+    }
+    const clamped = Math.max(1, Math.min(max, parsed));
+    setDraft(String(clamped));
+    if (clamped !== value) {
+      onCommit(clamped);
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      min={1}
+      max={Math.max(1, max)}
+      disabled={disabled}
+      aria-label={label}
+      title="Type sequence number (1, 2, 3…) and press Enter"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          (e.currentTarget as HTMLInputElement).blur();
+        } else if (e.key === 'Escape') {
+          setDraft(String(value));
+          (e.currentTarget as HTMLInputElement).blur();
+        }
+      }}
+      className="h-8 w-12 shrink-0 rounded-md border border-[hsl(var(--input))] bg-white px-1.5 text-center text-xs font-bold text-[hsl(var(--brand-navy))] tabular-nums outline-none transition focus:border-[hsl(var(--brand-navy))] disabled:opacity-50"
+    />
+  );
+}
+
 export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
   const cfg = MODULE_CONFIGS[module];
   const { site, reloadSite } = useSite();
@@ -396,6 +460,10 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>(cfg.defaults);
   const [saving, setSaving] = useState(false);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [sectionOrderSaving, setSectionOrderSaving] = useState(false);
+  const [sectionOrderSaved, setSectionOrderSaved] = useState(false);
+  const [showEmptySections, setShowEmptySections] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -612,7 +680,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
 
   const openNew = () => {
     setEditingId(null);
-    setForm({ ...cfg.defaults, display_order: items.length });
+    setForm({ ...cfg.defaults, display_order: items.length + 1 });
     setErrorMsg('');
     setModalOpen(true);
   };
@@ -700,32 +768,147 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
     }
   };
 
-  const handleMove = async (item: Record<string, unknown> & { id: string }, dir: -1 | 1) => {
+  const sectionStats = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (module !== 'results') return { counts, activeSections: [] as string[], allSections: [] as string[] };
+    for (const r of items) {
+      const sec = resolveResultSection({
+        category: typeof r.category === 'string' ? r.category : '',
+        achievement_title: typeof r.achievement_title === 'string' ? r.achievement_title : '',
+      });
+      counts.set(sec, (counts.get(sec) || 0) + 1);
+    }
+    const rawPool = Array.from(
+      new Set([
+        ...(Array.isArray(site.result_section_order) ? site.result_section_order : []),
+        ...counts.keys(),
+        ...DEFAULT_RESULT_CATEGORIES,
+      ])
+    ).filter(Boolean);
+    const allSections = sortResultSectionNames(rawPool, site.result_section_order);
+    const activeSections = allSections.filter((s) => (counts.get(s) || 0) > 0);
+    return { counts, activeSections, allSections };
+  }, [module, items, site.result_section_order]);
+
+  const displayedSectionList = showEmptySections
+    ? sectionStats.allSections
+    : sectionStats.activeSections.length > 0
+      ? sectionStats.activeSections
+      : sectionStats.allSections;
+
+  const persistResultSectionOrder = async (nextVisibleOrder: string[], logText: string) => {
+    setErrorMsg('');
+    setSectionOrderSaving(true);
+    setSectionOrderSaved(false);
+    try {
+      const visibleSet = new Set(nextVisibleOrder);
+      const remaining = sectionStats.allSections.filter((s) => !visibleSet.has(s));
+      const fullOrder = [...nextVisibleOrder, ...remaining];
+      const existingSettings =
+        (await getSingleton<Record<string, unknown>>('site_settings', 'main')) || {};
+      const sanitized = sanitizeSiteSettingsPayload(
+        { ...existingSettings, result_section_order: fullOrder },
+        ['results']
+      );
+      await setSingleton('site_settings', 'main', sanitized);
+      await logAdminActivity('update', 'site_settings', logText);
+      await reloadSite();
+      setSectionOrderSaved(true);
+      setTimeout(() => setSectionOrderSaved(false), 2500);
+    } catch (err) {
+      setErrorMsg(unwrapErr(err, 'Could not update result section sequence.'));
+    } finally {
+      setSectionOrderSaving(false);
+    }
+  };
+
+  const moveResultSection = async (sectionName: string, targetOneBasedPos: number) => {
+    const currentList = [...displayedSectionList];
+    const idx = currentList.indexOf(sectionName);
+    if (idx < 0) return;
+    const clampedIdx = Math.max(0, Math.min(currentList.length - 1, targetOneBasedPos - 1));
+    if (idx === clampedIdx) return;
+    const [moved] = currentList.splice(idx, 1);
+    currentList.splice(clampedIdx, 0, moved);
+    await persistResultSectionOrder(
+      currentList,
+      `Moved result section "${sectionName}" to position ${clampedIdx + 1}`
+    );
+  };
+
+  const resetResultSectionOrder = async () => {
+    await persistResultSectionOrder(
+      DEFAULT_RESULT_CATEGORIES,
+      'Reset result section sequence to default'
+    );
+  };
+
+  const handleMoveToPosition = async (
+    item: Record<string, unknown> & { id: string },
+    targetOneBasedPos: number
+  ) => {
     if (!supportsOrder) return;
     setErrorMsg('');
+    setReorderingId(item.id);
     try {
       const list = [...(await ensureMaterialized())].sort(
-        (a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)
+        (a, b) =>
+          Number(a.display_order || 0) - Number(b.display_order || 0) || a.id.localeCompare(b.id)
       );
-      const idx = list.findIndex((r) => r.id === item.id);
-      const swapIdx = idx + dir;
-      if (idx < 0 || swapIdx < 0 || swapIdx >= list.length) return;
-      [list[idx], list[swapIdx]] = [list[swapIdx], list[idx]];
+
+      if (cfg.filterKey && filterVal) {
+        const key = cfg.filterKey;
+        const matchingIndices: number[] = [];
+        list.forEach((rec, i) => {
+          if (String(rec[key] || '') === filterVal) {
+            matchingIndices.push(i);
+          }
+        });
+        const subset = matchingIndices.map((i) => list[i]);
+        const subIdx = subset.findIndex((r) => r.id === item.id);
+        const targetIdx = Math.max(0, Math.min(subset.length - 1, targetOneBasedPos - 1));
+        if (subIdx < 0 || subIdx === targetIdx) return;
+        const [moved] = subset.splice(subIdx, 1);
+        subset.splice(targetIdx, 0, moved);
+        matchingIndices.forEach((origIdx, k) => {
+          list[origIdx] = subset[k];
+        });
+      } else {
+        const idx = list.findIndex((r) => r.id === item.id);
+        const targetIdx = Math.max(0, Math.min(list.length - 1, targetOneBasedPos - 1));
+        if (idx < 0 || idx === targetIdx) return;
+        const [moved] = list.splice(idx, 1);
+        list.splice(targetIdx, 0, moved);
+      }
+
+      const updates = list
+        .map((rec, orderIdx) => ({ rec, nextOrder: orderIdx + 1 }))
+        .filter(({ rec, nextOrder }) => Number(rec.display_order) !== nextOrder);
+
       await Promise.all(
-        list.map((rec, orderIdx) =>
-          updateDocRecord(cfg.collection, rec.id, { display_order: orderIdx + 1 })
+        updates.map(({ rec, nextOrder }) =>
+          updateDocRecord(cfg.collection, rec.id, { display_order: nextOrder })
         )
       );
+
       await logAdminActivity(
         'update',
         cfg.collection,
-        `Reordered ${String(item[cfg.primaryField] || item.id)}`
+        `Set sequence for ${String(item[cfg.primaryField] || item.id)} to #${targetOneBasedPos}`
       );
       await load();
       await reloadSite();
     } catch (err) {
-      setErrorMsg(unwrapErr(err, 'Could not reorder item.'));
+      setErrorMsg(unwrapErr(err, 'Could not update sequence.'));
+    } finally {
+      setReorderingId(null);
     }
+  };
+
+  const handleMove = async (item: Record<string, unknown> & { id: string }, dir: -1 | 1) => {
+    const currentIdx = filtered.findIndex((r) => r.id === item.id);
+    if (currentIdx < 0) return;
+    await handleMoveToPosition(item, currentIdx + 1 + dir);
   };
 
   const handleDelete = async (item: Record<string, unknown> & { id: string }) => {
@@ -745,9 +928,13 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
     }
   };
 
-  const filterOptions = cfg.filterKey
+  const rawFilterOptions = cfg.filterKey
     ? [...new Set(items.map((item) => String(item[cfg.filterKey!] || '')).filter(Boolean))]
     : [];
+  const filterOptions =
+    module === 'results'
+      ? sortResultSectionNames(rawFilterOptions, site.result_section_order)
+      : rawFilterOptions;
 
   const filtered = items.filter((item) => {
     const q = search.trim().toLowerCase();
@@ -797,6 +984,118 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
           </button>
         </div>
       </div>
+
+      {module === 'results' && !loading && displayedSectionList.length > 0 && (
+        <section className="surface p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[hsl(var(--brand-navy))] text-[#FFBE1B]">
+                <ListOrdered className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-[hsl(var(--brand-navy))]">
+                  Result Sections Sequence (01, 02, 03…)
+                </h2>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Change the display sequence (1, 2, 3…) or use arrows to control which heading appears first on the Results page and homepage.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {sectionOrderSaving && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-[hsl(var(--brand-navy))]">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  <span>Saving…</span>
+                </span>
+              )}
+              {sectionOrderSaved && !sectionOrderSaving && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Saved</span>
+                </span>
+              )}
+              {sectionStats.allSections.length > sectionStats.activeSections.length && (
+                <button
+                  type="button"
+                  onClick={() => setShowEmptySections((v) => !v)}
+                  className="rounded-lg border border-[hsl(var(--border))] bg-white px-2.5 py-1.5 text-xs font-semibold text-[hsl(var(--brand-navy))] hover:bg-[hsl(var(--brand-surface))]"
+                >
+                  {showEmptySections ? 'Active sections only' : 'Show all categories'}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={sectionOrderSaving}
+                onClick={resetResultSectionOrder}
+                className="rounded-lg border border-[hsl(var(--border))] bg-white px-2.5 py-1.5 text-xs font-semibold text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--brand-navy))] disabled:opacity-50"
+              >
+                Reset default
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 divide-y divide-[hsl(var(--border))] rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--brand-surface))]/40">
+            {displayedSectionList.map((secName, sIdx) => {
+              const count = sectionStats.counts.get(secName) || 0;
+              return (
+                <div
+                  key={secName}
+                  className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-[hsl(var(--brand-navy))] text-xs font-bold text-[#FFBE1B] tabular-nums">
+                      {String(sIdx + 1).padStart(2, '0')}
+                    </span>
+                    <span className="truncate text-sm font-bold text-[hsl(var(--brand-navy))]">
+                      {secName}
+                    </span>
+                    <span
+                      className={`rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
+                        count > 0
+                          ? 'bg-white text-[hsl(var(--brand-navy))] border border-[hsl(var(--border))]'
+                          : 'text-[hsl(var(--muted-foreground))]'
+                      }`}
+                    >
+                      {count} {count === 1 ? 'result' : 'results'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-[11px] font-semibold text-[hsl(var(--muted-foreground))]">
+                      Seq
+                    </label>
+                    <SequenceNumberInput
+                      value={sIdx + 1}
+                      max={displayedSectionList.length}
+                      disabled={sectionOrderSaving}
+                      label={`Sequence for ${secName}`}
+                      onCommit={(targetPos) => moveResultSection(secName, targetPos)}
+                    />
+                    <button
+                      type="button"
+                      disabled={sectionOrderSaving || sIdx === 0}
+                      onClick={() => moveResultSection(secName, sIdx)}
+                      aria-label={`Move section ${secName} up`}
+                      className="rounded p-1.5 text-slate-500 transition hover:bg-white hover:text-[hsl(var(--brand-navy))] disabled:opacity-25"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sectionOrderSaving || sIdx === displayedSectionList.length - 1}
+                      onClick={() => moveResultSection(secName, sIdx + 2)}
+                      aria-label={`Move section ${secName} down`}
+                      className="rounded p-1.5 text-slate-500 transition hover:bg-white hover:text-[hsl(var(--brand-navy))] disabled:opacity-25"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <div className="surface flex flex-wrap items-center gap-3 p-3">
         <div className="relative min-w-[220px] flex-1 max-w-sm">
@@ -856,9 +1155,19 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                   className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="w-5 shrink-0 text-right text-xs font-semibold text-slate-400 tabular-nums">
-                      {idx + 1}
-                    </span>
+                    {supportsOrder && search.trim() === '' ? (
+                      <SequenceNumberInput
+                        value={idx + 1}
+                        max={filtered.length}
+                        disabled={Boolean(reorderingId)}
+                        label={`Sequence number for ${String(item[cfg.primaryField] || item.id)}`}
+                        onCommit={(targetPos) => handleMoveToPosition(item, targetPos)}
+                      />
+                    ) : (
+                      <span className="w-5 shrink-0 text-right text-xs font-semibold text-slate-400 tabular-nums">
+                        {idx + 1}
+                      </span>
+                    )}
                     {module === 'courses' && (
                       <div className="hidden h-11 w-20 shrink-0 overflow-hidden rounded-md border border-[hsl(var(--border))] sm:block">
                         <SafeImage
@@ -948,11 +1257,11 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                       />
                     </button>
 
-                    {supportsOrder && search.trim() === '' && filterVal === '' && (
+                    {supportsOrder && search.trim() === '' && (
                       <>
                         <button
                           type="button"
-                          disabled={idx === 0}
+                          disabled={idx === 0 || Boolean(reorderingId)}
                           onClick={() => handleMove(item, -1)}
                           aria-label={`Move ${String(item[cfg.primaryField] || item.id)} up`}
                           className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-[hsl(var(--brand-navy))] disabled:opacity-25"
@@ -961,7 +1270,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                         </button>
                         <button
                           type="button"
-                          disabled={idx === filtered.length - 1}
+                          disabled={idx === filtered.length - 1 || Boolean(reorderingId)}
                           onClick={() => handleMove(item, 1)}
                           aria-label={`Move ${String(item[cfg.primaryField] || item.id)} down`}
                           className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-[hsl(var(--brand-navy))] disabled:opacity-25"
