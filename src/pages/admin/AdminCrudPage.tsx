@@ -512,11 +512,15 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
             !existingIds.has(item.id) &&
             !existingNames.has(item.student_name.trim().toLowerCase())
         );
-        const staleCategoryDocs = LATEST_UPLOADED_RESULTS.filter((item) => {
+        const staleDocs = LATEST_UPLOADED_RESULTS.filter((item) => {
           const match = rows.find((r) => r.id === item.id);
-          return match && match.category !== item.category;
+          return (
+            match &&
+            (match.category !== item.category ||
+              (typeof match.photo_url === 'string' && match.photo_url.includes('/assets/aistudio/')))
+          );
         });
-        if (missing.length > 0 || staleCategoryDocs.length > 0) {
+        if (missing.length > 0 || staleDocs.length > 0) {
           for (let i = 0; i < missing.length; i++) {
             const rec = { ...missing[i], display_order: maxOrder + i + 1 };
             await setDocRecord(
@@ -525,8 +529,11 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
               buildPayloadFromRecord(rec as unknown as Record<string, unknown>)
             );
           }
-          for (const rec of staleCategoryDocs) {
-            await updateDocRecord('results', rec.id, { category: rec.category });
+          for (const rec of staleDocs) {
+            await updateDocRecord('results', rec.id, {
+              category: rec.category,
+              photo_url: rec.photo_url,
+            });
           }
           await markModuleCustomized(['results', RESULTS_BATCH_SYNC_KEY]);
           await logAdminActivity(

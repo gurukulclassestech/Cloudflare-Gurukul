@@ -12,7 +12,7 @@ import { useSite } from '../../context/SiteContext';
 import { DEFAULT_PAGE_TEXTS } from '../../data/defaults';
 import {
   deleteDocRecord,
-  fetchCollection,
+  fetchAllPageTexts,
   logAdminActivity,
   sanitizePageTextPayload,
   setDocRecord,
@@ -254,7 +254,7 @@ export function AdminPageTextsPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const refreshCustomizedKeys = () => {
-    fetchCollection<PageText>('page_texts')
+    fetchAllPageTexts()
       .then((rows) => {
         setCustomizedKeys(new Set(rows.map((r) => r.id)));
       })

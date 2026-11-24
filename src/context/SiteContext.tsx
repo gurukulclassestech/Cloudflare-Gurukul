@@ -8,10 +8,12 @@ import {
   DEFAULT_SITE_SETTINGS,
 } from '../data/defaults';
 import {
+  fetchAllPageTexts,
   fetchCollection,
   getSingleton,
   onContentUpdated,
   subscribeCollection,
+  subscribePageTexts,
   subscribeSingleton,
 } from '../lib/firestoreApi';
 import type {
@@ -67,7 +69,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           'display_order',
           'asc'
         ).catch(() => null),
-        fetchCollection<PageText>('page_texts').catch(() => null),
+        fetchAllPageTexts().catch(() => null),
       ]);
 
       if (nextSettings !== null) setSettingsDoc(nextSettings);
@@ -132,15 +134,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         'asc',
         () => markSettled('banners')
       ),
-      subscribeCollection<PageText>(
-        'page_texts',
-        [],
+      subscribePageTexts(
         (rows) => {
           setPageTextRows(rows);
           markSettled('page_texts');
         },
-        undefined,
-        'asc',
         () => markSettled('page_texts')
       ),
     ];

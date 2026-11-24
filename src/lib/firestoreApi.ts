@@ -344,6 +344,67 @@ export function subscribeSingleton<T>(
   );
 }
 
+const PAGE_TEXT_KEYS = Object.keys(DEFAULT_PAGE_TEXTS) as PageTextKey[];
+
+export async function fetchAllPageTexts(): Promise<PageText[]> {
+  const results = await Promise.all(
+    PAGE_TEXT_KEYS.map(async (key) => {
+      try {
+        const snap = await getDoc(doc(db, 'page_texts', key));
+        if (!snap.exists()) return null;
+        return { id: snap.id as PageTextKey, ...(snap.data() as Omit<PageText, 'id'>) };
+      } catch {
+        return null;
+      }
+    })
+  );
+  return results.filter((item): item is PageText => item !== null);
+}
+
+export function subscribePageTexts(
+  onData: (rows: PageText[]) => void,
+  onSettled?: () => void
+): () => void {
+  const rowMap = new Map<PageTextKey, PageText>();
+  const settledKeys = new Set<PageTextKey>();
+
+  const emit = () => {
+    onData(Array.from(rowMap.values()));
+  };
+
+  const unsubs = PAGE_TEXT_KEYS.map((key) =>
+    onSnapshot(
+      doc(db, 'page_texts', key),
+      (snap) => {
+        if (snap.exists()) {
+          rowMap.set(key, { id: key, ...(snap.data() as Omit<PageText, 'id'>) });
+        } else {
+          rowMap.delete(key);
+        }
+        if (!settledKeys.has(key)) {
+          settledKeys.add(key);
+          if (settledKeys.size >= PAGE_TEXT_KEYS.length && onSettled) {
+            onSettled();
+          }
+        }
+        emit();
+      },
+      () => {
+        if (!settledKeys.has(key)) {
+          settledKeys.add(key);
+          if (settledKeys.size >= PAGE_TEXT_KEYS.length && onSettled) {
+            onSettled();
+          }
+        }
+      }
+    )
+  );
+
+  return () => {
+    unsubs.forEach((u) => u());
+  };
+}
+
 export async function fetchCollection<T extends { id: string }>(
   collectionName: string,
   constraints: QueryConstraint[] = [],

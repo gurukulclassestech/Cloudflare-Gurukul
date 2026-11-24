@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BookOpen } from 'lucide-react';
 
 interface SafeImageProps {
@@ -26,31 +26,50 @@ function isSafeImageUrl(url?: string): string {
 function buildImageCandidates(safeSrc: string, variant: 'card' | 'full'): string[] {
   if (!safeSrc) return [];
 
-  const match = safeSrc.match(
-    /^(\/assets\/(?:gurukul|aistudio)\/([a-zA-Z0-9_-]+))\.(png|webp)(\?.*)?$/i
+  // Map legacy /assets/aistudio/* result paths to tracked /assets/gurukul/results/*
+  const aistudioMatch = safeSrc.match(
+    /^\/assets\/aistudio\/([a-zA-Z0-9_-]+)\.(png|webp)(\?.*)?$/i
   );
-  if (!match) return [safeSrc];
-
-  const base = match[1];
-  const fileName = match[2].toLowerCase();
-  const ext = match[3].toLowerCase();
-  const candidates: string[] = [];
-
-  const skipThumb =
-    fileName === 'favicon' ||
-    fileName === 'logo' ||
-    fileName === 'hero_banner_0' ||
-    fileName.endsWith('-thumb');
-
-  if (variant === 'card' && !skipThumb) {
-    candidates.push(`${base}-thumb.webp`);
+  if (aistudioMatch) {
+    const fileName = aistudioMatch[1];
+    const baseName = fileName.replace(/-thumb$/i, '');
+    const candidates: string[] = [];
+    if (variant === 'card') {
+      candidates.push(`/assets/gurukul/results/${baseName}-thumb.webp`);
+    }
+    candidates.push(`/assets/gurukul/results/${baseName}.webp`);
+    if (variant === 'card') {
+      candidates.push(`/assets/aistudio/${baseName}-thumb.webp`);
+    }
+    candidates.push(`/assets/aistudio/${baseName}.webp`);
+    candidates.push(safeSrc);
+    return [...new Set(candidates)];
   }
-  if (ext === 'png' && fileName !== 'favicon') {
-    candidates.push(`${base}.webp`);
-  }
-  candidates.push(safeSrc);
 
-  return [...new Set(candidates)];
+  const gurukulMatch = safeSrc.match(
+    /^(\/assets\/gurukul\/(?:results\/)?([a-zA-Z0-9_-]+))\.(png|webp)(\?.*)?$/i
+  );
+  if (gurukulMatch) {
+    const rawBase = gurukulMatch[1];
+    const fileName = gurukulMatch[2];
+    const lowerName = fileName.toLowerCase();
+    const base = rawBase.replace(/-thumb$/i, '');
+    const candidates: string[] = [];
+
+    const skipThumb =
+      lowerName === 'favicon' || lowerName === 'logo' || lowerName === 'hero_banner_0';
+
+    if (variant === 'card' && !skipThumb) {
+      candidates.push(`${base}-thumb.webp`);
+    }
+    if (lowerName !== 'favicon') {
+      candidates.push(`${base}.webp`);
+    }
+    candidates.push(safeSrc);
+    return [...new Set(candidates)];
+  }
+
+  return [safeSrc];
 }
 
 export function SafeImage({
@@ -65,24 +84,12 @@ export function SafeImage({
   const safeSrc = isSafeImageUrl(src);
   const candidates = buildImageCandidates(safeSrc, variant);
   const [attemptIndex, setAttemptIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-
-  const activeSrc = candidates[attemptIndex] || '';
 
   useEffect(() => {
     setAttemptIndex(0);
-    setLoaded(false);
   }, [safeSrc, variant]);
 
-  useEffect(() => {
-    const el = imgRef.current;
-    if (el && el.complete && el.naturalWidth > 0) {
-      setLoaded(true);
-    } else {
-      setLoaded(false);
-    }
-  }, [activeSrc]);
+  const activeSrc = candidates[attemptIndex] || '';
 
   if (!safeSrc || !activeSrc) {
     return (
@@ -100,39 +107,23 @@ export function SafeImage({
   }
 
   return (
-    <span className={`relative block overflow-hidden ${className}`}>
-      {!eager && !loaded && (
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 animate-pulse bg-[hsl(var(--brand-surface))]"
-        />
-      )}
-      <img
-        ref={imgRef}
-        src={activeSrc}
-        alt={alt}
-        loading={eager ? 'eager' : 'lazy'}
-        decoding="async"
-        fetchPriority={eager ? 'high' : variant === 'card' ? 'low' : 'auto'}
-        referrerPolicy="no-referrer"
-        onLoad={(e) => {
-          setLoaded(true);
-          const el = e.currentTarget;
-          if (onImageLoad && el.naturalWidth && el.naturalHeight) {
-            onImageLoad(el.naturalWidth, el.naturalHeight);
-          }
-        }}
-        onError={() => {
-          if (attemptIndex + 1 < candidates.length) {
-            setAttemptIndex((idx) => idx + 1);
-          } else {
-            setAttemptIndex(candidates.length);
-          }
-        }}
-        className={`block h-full w-full ${fit === 'contain' ? 'object-contain' : 'object-cover'} ${
-          eager ? '' : `transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`
-        }`}
-      />
-    </span>
+    <img
+      src={activeSrc}
+      alt={alt}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchPriority={eager ? 'high' : variant === 'card' ? 'low' : 'auto'}
+      referrerPolicy="no-referrer"
+      onLoad={(e) => {
+        const el = e.currentTarget;
+        if (onImageLoad && el.naturalWidth && el.naturalHeight) {
+          onImageLoad(el.naturalWidth, el.naturalHeight);
+        }
+      }}
+      onError={() => {
+        setAttemptIndex((idx) => idx + 1);
+      }}
+      className={`${fit === 'contain' ? 'object-contain' : 'object-cover'} ${className}`}
+    />
   );
 }
