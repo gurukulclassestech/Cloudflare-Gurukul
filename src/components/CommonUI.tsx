@@ -302,6 +302,7 @@ export function CourseCard({ course }: { course: Course }) {
         <SafeImage
           src={course.image_url || SITE_IMAGES.classroom}
           alt={course.name}
+          variant="card"
           className="h-48 w-full transition-transform duration-700 group-hover:scale-[1.06]"
         />
         <div
@@ -516,6 +517,7 @@ export function LectureCard({
         <SafeImage
           src={lecture.thumbnail_url || SITE_IMAGES.classroom}
           alt={lecture.title}
+          variant="card"
           className="h-44 w-full transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <span className="absolute inset-0 flex items-center justify-center bg-[#0B1D40]/35 transition group-hover:bg-[#0B1D40]/45">
@@ -567,7 +569,7 @@ export function FacultyCard({ member }: { member: FacultyMember }) {
     <article className="surface surface-hover flex flex-col overflow-hidden">
       <div className="h-52 overflow-hidden bg-[hsl(var(--brand-surface))]">
         {member.photo_url ? (
-          <SafeImage src={member.photo_url} alt={member.name} className="h-52 w-full" />
+          <SafeImage src={member.photo_url} alt={member.name} variant="card" className="h-52 w-full" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-[hsl(var(--brand-navy))] text-white">
             <span className="display-face text-5xl text-[#FFBE1B]">{initial}</span>
@@ -622,6 +624,7 @@ export function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           <SafeImage
             src={testimonial.photo_url}
             alt={testimonial.display_name}
+            variant="card"
             className="h-10 w-10 shrink-0 rounded-full"
           />
         ) : (
@@ -653,6 +656,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
         <SafeImage
           src={post.featured_image_url || SITE_IMAGES.exam}
           alt={post.title}
+          variant="card"
           className="h-44 w-full transition-transform duration-500 group-hover:scale-[1.03]"
         />
       </Link>
@@ -715,6 +719,7 @@ export function GalleryTile({
       <SafeImage
         src={item.file_url}
         alt={item.title || item.caption || 'Institute photograph'}
+        variant="card"
         className="h-48 w-full transition-transform duration-500 group-hover:scale-[1.04]"
       />
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0B1D40]/85 via-[#0B1D40]/35 to-transparent p-3">

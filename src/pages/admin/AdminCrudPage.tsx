@@ -21,6 +21,8 @@ import {
   DEFAULT_RESULT_CATEGORIES,
   DEFAULT_RESULTS,
   DEFAULT_TESTIMONIALS,
+  LATEST_UPLOADED_RESULTS,
+  RESULTS_BATCH_SYNC_KEY,
 } from '../../data/defaults';
 import {
   createDocRecord,
@@ -232,7 +234,7 @@ const MODULE_CONFIGS: Record<CrudModuleKey, ModuleConfig> = {
   results: {
     collection: 'results',
     title: 'Results & Achievements',
-    subtitle: 'Assign each result to an exam section (IIT-JEE, NEET, etc.) and manage 1254 × 1254 achievement posters.',
+    subtitle: 'Assign each result to an exam section (JEE Advanced, JEE Main, IIT-JEE, NEET, MHT-CET, etc.) and manage 1254 × 1254 posters.',
     primaryField: 'student_name',
     secondaryField: 'score',
     filterKey: 'category',
@@ -242,7 +244,7 @@ const MODULE_CONFIGS: Record<CrudModuleKey, ModuleConfig> = {
       student_name: '',
       achievement_title: '',
       score: '',
-      category: 'IIT-JEE',
+      category: 'JEE Advanced',
       academic_year: '2025-26',
       photo_url: '',
       document_url: '',
@@ -255,11 +257,11 @@ const MODULE_CONFIGS: Record<CrudModuleKey, ModuleConfig> = {
       { key: 'score', label: 'Score / Rank', type: 'text', required: true, placeholder: 'AIR 3 / 97.4%' },
       {
         key: 'category',
-        label: 'Result section (e.g. IIT-JEE, NEET)',
+        label: 'Result section (upper heading: JEE Advanced, NEET, etc.)',
         type: 'combobox',
         required: true,
         options: DEFAULT_RESULT_CATEGORIES,
-        placeholder: 'IIT-JEE, NEET, MHT-CET...',
+        placeholder: 'JEE Advanced, JEE Main, NEET, MHT-CET...',
       },
       { key: 'academic_year', label: 'Academic year (optional)', type: 'text', placeholder: '2025-26' },
       { key: 'achievement_title', label: 'Achievement title', type: 'text', required: true, span: 2 },
@@ -489,12 +491,62 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
   const load = async () => {
     setLoading(true);
     try {
-      const rows = await fetchCollection<Record<string, unknown> & { id: string }>(
+      let rows = await fetchCollection<Record<string, unknown> & { id: string }>(
         cfg.collection,
         [],
         module === 'blogs' ? 'published_date' : 'display_order',
         module === 'blogs' ? 'desc' : 'asc'
       );
+
+      if (module === 'results' && !site.customized_modules?.includes(RESULTS_BATCH_SYNC_KEY)) {
+        const existingIds = new Set(rows.map((r) => r.id));
+        const existingNames = new Set(
+          rows.map((r) => String(r.student_name || '').trim().toLowerCase())
+        );
+        const maxOrder = rows.reduce(
+          (max, r) => Math.max(max, Number(r.display_order || 0)),
+          0
+        );
+        const missing = LATEST_UPLOADED_RESULTS.filter(
+          (item) =>
+            !existingIds.has(item.id) &&
+            !existingNames.has(item.student_name.trim().toLowerCase())
+        );
+        const staleCategoryDocs = LATEST_UPLOADED_RESULTS.filter((item) => {
+          const match = rows.find((r) => r.id === item.id);
+          return match && match.category !== item.category;
+        });
+        if (missing.length > 0 || staleCategoryDocs.length > 0) {
+          for (let i = 0; i < missing.length; i++) {
+            const rec = { ...missing[i], display_order: maxOrder + i + 1 };
+            await setDocRecord(
+              'results',
+              rec.id,
+              buildPayloadFromRecord(rec as unknown as Record<string, unknown>)
+            );
+          }
+          for (const rec of staleCategoryDocs) {
+            await updateDocRecord('results', rec.id, { category: rec.category });
+          }
+          await markModuleCustomized(['results', RESULTS_BATCH_SYNC_KEY]);
+          await logAdminActivity(
+            'create',
+            'results',
+            `Synced JEE Advanced results section`
+          );
+          rows = await fetchCollection<Record<string, unknown> & { id: string }>(
+            cfg.collection,
+            [],
+            'display_order',
+            'asc'
+          );
+          await reloadSite();
+        } else if (rows.length > 0) {
+          await markModuleCustomized(['results', RESULTS_BATCH_SYNC_KEY]);
+          await reloadSite();
+        }
+      }
+
       setDbItems(rows);
     } catch (err) {
       setErrorMsg(unwrapErr(err, 'Could not load records.'));
@@ -805,6 +857,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                         <SafeImage
                           src={String(item.image_url || '/assets/gurukul/course_two-year-iit-jee-integrated-course.png')}
                           alt={String(item[cfg.primaryField] || 'Course')}
+                          variant="card"
                           className="h-full w-full"
                         />
                       </div>
@@ -815,6 +868,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                           src={String(item.photo_url)}
                           alt={String(item[cfg.primaryField] || 'Result')}
                           fit="contain"
+                          variant="card"
                           className="h-full w-full"
                         />
                       </div>

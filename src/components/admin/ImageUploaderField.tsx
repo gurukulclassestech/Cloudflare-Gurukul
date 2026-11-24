@@ -88,7 +88,7 @@ export function ImageUploaderField({
       {error && <p className="text-xs text-red-600">{error}</p>}
       {value && (
         <div className="h-28 w-44 overflow-hidden rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--brand-surface))]">
-          <SafeImage src={value} alt={label} className="h-full w-full" />
+          <SafeImage src={value} alt={label} variant="card" className="h-full w-full" />
         </div>
       )}
     </div>

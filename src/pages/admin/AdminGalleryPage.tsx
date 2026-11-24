@@ -463,6 +463,7 @@ export function AdminGalleryPage() {
                   <SafeImage
                     src={item.file_url}
                     alt={item.title || 'Gallery photograph'}
+                    variant="card"
                     className="h-32 w-full"
                   />
                   <div className="flex items-center justify-between gap-1 px-2.5 py-2">

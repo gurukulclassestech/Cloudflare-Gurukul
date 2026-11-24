@@ -43,6 +43,7 @@ export function CampusSection({ section }: { section?: HomepageSection }) {
                       <SafeImage
                         src={item.image_url}
                         alt={item.title || 'Campus facility'}
+                        variant="card"
                         className="h-full w-full"
                       />
                       <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-[hsl(var(--brand-navy))] shadow-sm">

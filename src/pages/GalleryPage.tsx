@@ -167,6 +167,8 @@ export function GalleryPage() {
               src={activeItem.file_url}
               alt={activeItem.title || 'Gallery photograph'}
               fit="contain"
+              variant="full"
+              eager
               className="max-h-[72vh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
             />
             {(activeItem.title || activeItem.caption) && (

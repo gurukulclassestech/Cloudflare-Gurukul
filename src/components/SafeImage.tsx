@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BookOpen } from 'lucide-react';
 
 interface SafeImageProps {
@@ -7,6 +7,7 @@ interface SafeImageProps {
   className?: string;
   eager?: boolean;
   fit?: 'cover' | 'contain';
+  variant?: 'card' | 'full';
   onImageLoad?: (naturalWidth: number, naturalHeight: number) => void;
 }
 
@@ -22,9 +23,34 @@ function isSafeImageUrl(url?: string): string {
   return '';
 }
 
-function getLocalWebpSource(safeSrc: string): string | null {
-  const match = safeSrc.match(/^(\/assets\/gurukul\/(?!favicon\.)[a-zA-Z0-9_-]+)\.png(?:\?.*)?$/i);
-  return match ? `${match[1]}.webp` : null;
+function buildImageCandidates(safeSrc: string, variant: 'card' | 'full'): string[] {
+  if (!safeSrc) return [];
+
+  const match = safeSrc.match(
+    /^(\/assets\/(?:gurukul|aistudio)\/([a-zA-Z0-9_-]+))\.(png|webp)(\?.*)?$/i
+  );
+  if (!match) return [safeSrc];
+
+  const base = match[1];
+  const fileName = match[2].toLowerCase();
+  const ext = match[3].toLowerCase();
+  const candidates: string[] = [];
+
+  const skipThumb =
+    fileName === 'favicon' ||
+    fileName === 'logo' ||
+    fileName === 'hero_banner_0' ||
+    fileName.endsWith('-thumb');
+
+  if (variant === 'card' && !skipThumb) {
+    candidates.push(`${base}-thumb.webp`);
+  }
+  if (ext === 'png' && fileName !== 'favicon') {
+    candidates.push(`${base}.webp`);
+  }
+  candidates.push(safeSrc);
+
+  return [...new Set(candidates)];
 }
 
 export function SafeImage({
@@ -33,19 +59,32 @@ export function SafeImage({
   className = '',
   eager = false,
   fit = 'cover',
+  variant = 'full',
   onImageLoad,
 }: SafeImageProps) {
   const safeSrc = isSafeImageUrl(src);
-  const webpSrc = getLocalWebpSource(safeSrc);
-  const [usePngFallback, setUsePngFallback] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const candidates = buildImageCandidates(safeSrc, variant);
+  const [attemptIndex, setAttemptIndex] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  const activeSrc = candidates[attemptIndex] || '';
 
   useEffect(() => {
-    setUsePngFallback(false);
-    setFailed(false);
-  }, [safeSrc]);
+    setAttemptIndex(0);
+    setLoaded(false);
+  }, [safeSrc, variant]);
 
-  if (!safeSrc || failed) {
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) {
+      setLoaded(true);
+    } else {
+      setLoaded(false);
+    }
+  }, [activeSrc]);
+
+  if (!safeSrc || !activeSrc) {
     return (
       <div
         role="img"
@@ -60,30 +99,40 @@ export function SafeImage({
     );
   }
 
-  const activeSrc = !usePngFallback && webpSrc ? webpSrc : safeSrc;
-
   return (
-    <img
-      src={activeSrc}
-      alt={alt}
-      loading={eager ? 'eager' : 'lazy'}
-      decoding={eager ? 'sync' : 'async'}
-      fetchPriority={eager ? 'high' : undefined}
-      referrerPolicy="no-referrer"
-      onLoad={(e) => {
-        const el = e.currentTarget;
-        if (onImageLoad && el.naturalWidth && el.naturalHeight) {
-          onImageLoad(el.naturalWidth, el.naturalHeight);
-        }
-      }}
-      onError={() => {
-        if (webpSrc && !usePngFallback) {
-          setUsePngFallback(true);
-        } else {
-          setFailed(true);
-        }
-      }}
-      className={`${fit === 'contain' ? 'object-contain' : 'object-cover'} ${className}`}
-    />
+    <span className={`relative block overflow-hidden ${className}`}>
+      {!eager && !loaded && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 animate-pulse bg-[hsl(var(--brand-surface))]"
+        />
+      )}
+      <img
+        ref={imgRef}
+        src={activeSrc}
+        alt={alt}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchPriority={eager ? 'high' : variant === 'card' ? 'low' : 'auto'}
+        referrerPolicy="no-referrer"
+        onLoad={(e) => {
+          setLoaded(true);
+          const el = e.currentTarget;
+          if (onImageLoad && el.naturalWidth && el.naturalHeight) {
+            onImageLoad(el.naturalWidth, el.naturalHeight);
+          }
+        }}
+        onError={() => {
+          if (attemptIndex + 1 < candidates.length) {
+            setAttemptIndex((idx) => idx + 1);
+          } else {
+            setAttemptIndex(candidates.length);
+          }
+        }}
+        className={`block h-full w-full ${fit === 'contain' ? 'object-contain' : 'object-cover'} ${
+          eager ? '' : `transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`
+        }`}
+      />
+    </span>
   );
 }

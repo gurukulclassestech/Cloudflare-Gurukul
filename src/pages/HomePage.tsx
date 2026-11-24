@@ -29,9 +29,10 @@ import {
   DEFAULT_EXAMS,
   DEFAULT_HOMEPAGE_SECTIONS,
   DEFAULT_RESULT_CATEGORIES,
-  DEFAULT_RESULTS,
   DEFAULT_TESTIMONIALS,
   REPRESENTATIVE_GALLERY,
+  getResultSectionSubtitle,
+  mergePendingResults,
   resolveResultSection,
   SITE_IMAGES,
 } from '../data/defaults';
@@ -293,6 +294,7 @@ function IntroSection({ section }: { section: HomepageSection }) {
             <SafeImage
               src={section.image_url || SITE_IMAGES.mentoring}
               alt={section.title || 'Mentoring at the institute'}
+              variant="card"
               className="h-full w-full"
             />
           </div>
@@ -437,6 +439,14 @@ function AchievementsHomeSection({
     ? results.filter((r) => resolveResultSection(r) === selectedSection)
     : results;
 
+  const groupedHomeResults = resultSections
+    .filter((sec) => !selectedSection || sec === selectedSection)
+    .map((sec) => ({
+      title: sec,
+      items: visibleResults.filter((r) => resolveResultSection(r) === sec),
+    }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--brand-navy))] py-14 text-white sm:py-20">
       <div
@@ -530,39 +540,62 @@ function AchievementsHomeSection({
               </div>
             </div>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {visibleResults.slice(0, 6).map((res) => (
-                <Link
-                  key={res.id}
-                  to="/results"
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xs transition hover:border-[#FFBE1B]/50 hover:bg-white/12"
-                >
-                  {res.photo_url && (
-                    <div className="aspect-square w-full shrink-0 overflow-hidden bg-white/5">
-                      <SafeImage
-                        src={res.photo_url}
-                        alt={res.student_name}
-                        fit="contain"
-                        className="h-full w-full"
-                      />
-                    </div>
-                  )}
-                  <div className="p-5">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="display-face text-3xl text-[#FFBE1B] tabular-nums">{res.score}</p>
-                      <span className="rounded-full border border-[#FFBE1B]/40 bg-[#FFBE1B]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FFBE1B]">
-                        {resolveResultSection(res)}
-                      </span>
-                    </div>
-                    <h3 className="mt-2 text-base font-bold text-white">{res.student_name}</h3>
-                    <p className="mt-1 text-xs text-white/80">{res.achievement_title}</p>
-                    {res.academic_year && (
-                      <p className="mt-3 text-xs text-white/60 tabular-nums">
-                        {res.academic_year}
+            <div className="space-y-10">
+              {groupedHomeResults.map((group) => (
+                <div key={group.title} className="space-y-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/15 border-l-4 border-l-[#FFBE1B] bg-white/8 px-5 py-3.5 backdrop-blur-xs">
+                    <div>
+                      <h3 className="display-face text-xl text-[#FFBE1B] sm:text-2xl">
+                        {group.title}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-white/75">
+                        {getResultSectionSubtitle(group.title)}
                       </p>
-                    )}
+                    </div>
+                    <span className="rounded-lg border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white tabular-nums">
+                      {group.items.length} {group.items.length === 1 ? 'Result' : 'Results'}
+                    </span>
                   </div>
-                </Link>
+
+                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {group.items.slice(0, 12).map((res) => (
+                      <Link
+                        key={res.id}
+                        to="/results"
+                        className="group flex flex-col overflow-hidden rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xs transition hover:border-[#FFBE1B]/50 hover:bg-white/12"
+                      >
+                        {res.photo_url && (
+                          <div className="aspect-square w-full shrink-0 overflow-hidden bg-white/5">
+                            <SafeImage
+                              src={res.photo_url}
+                              alt={res.student_name}
+                              fit="contain"
+                              variant="card"
+                              className="h-full w-full"
+                            />
+                          </div>
+                        )}
+                        <div className="p-5">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="display-face text-3xl text-[#FFBE1B] tabular-nums">
+                              {res.score}
+                            </p>
+                            <span className="rounded-full border border-[#FFBE1B]/40 bg-[#FFBE1B]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FFBE1B]">
+                              {resolveResultSection(res)}
+                            </span>
+                          </div>
+                          <h3 className="mt-2 text-base font-bold text-white">{res.student_name}</h3>
+                          <p className="mt-1 text-xs text-white/80">{res.achievement_title}</p>
+                          {res.academic_year && (
+                            <p className="mt-3 text-xs text-white/60 tabular-nums">
+                              {res.academic_year}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -695,7 +728,7 @@ export function HomePage() {
         },
         'display_order',
         'asc',
-        6,
+        30,
         () => markSettled('results')
       ),
       subscribePublished<Testimonial>(
@@ -747,8 +780,7 @@ export function HomePage() {
     courses.length > 0 || customized.includes('courses') ? courses : DEFAULT_COURSES;
   const displayExams =
     exams.length > 0 || customized.includes('exams') ? exams : DEFAULT_EXAMS;
-  const displayResults =
-    results.length > 0 || customized.includes('results') ? results : DEFAULT_RESULTS;
+  const displayResults = mergePendingResults(results, customized);
   const displayTestimonials =
     testimonials.length > 0 || customized.includes('testimonials')
       ? testimonials

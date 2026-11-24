@@ -158,15 +158,15 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    let lastFocusReload = Date.now();
     const onVisibilityOrFocus = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && Date.now() - lastFocusReload > 15000) {
+        lastFocusReload = Date.now();
         reloadSite();
       }
     };
     window.addEventListener('focus', onVisibilityOrFocus);
     document.addEventListener('visibilitychange', onVisibilityOrFocus);
-
-    reloadSite();
 
     return () => {
       unsubs.forEach((u) => u());

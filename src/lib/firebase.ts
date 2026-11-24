@@ -73,8 +73,6 @@ export async function testConnection(): Promise<void> {
   }
 }
 
-testConnection();
-
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -89,7 +87,7 @@ function fileToDataUrl(file: File): Promise<string> {
  * (e.g. serverless deployment on Vercel without Storage rules), the fallback data URL
  * stays lightweight (< 180 KB) and fits safely inside Firestore string bounds.
  */
-async function compressImageForInlineFallback(file: File, maxDataUrlLength = 190000): Promise<string> {
+async function compressImageForInlineFallback(file: File, maxDataUrlLength = 85000): Promise<string> {
   const raw = await fileToDataUrl(file);
   if (raw.length <= maxDataUrlLength) {
     return raw;
@@ -99,9 +97,9 @@ async function compressImageForInlineFallback(file: File, maxDataUrlLength = 190
     const img = new Image();
     img.onload = () => {
       try {
-        let width = img.naturalWidth || img.width || 1200;
+        let width = img.naturalWidth || img.width || 800;
         let height = img.naturalHeight || img.height || 800;
-        const maxSide = 1200;
+        const maxSide = 800;
         if (width > maxSide || height > maxSide) {
           const ratio = Math.min(maxSide / width, maxSide / height);
           width = Math.max(1, Math.round(width * ratio));
@@ -115,7 +113,7 @@ async function compressImageForInlineFallback(file: File, maxDataUrlLength = 190
           return;
         }
 
-        const mime = file.type === 'image/png' ? 'image/webp' : 'image/jpeg';
+        const mime = 'image/webp';
         let scale = 1;
         for (let attempt = 0; attempt < 5; attempt++) {
           const w = Math.max(120, Math.round(width * scale));
@@ -125,7 +123,7 @@ async function compressImageForInlineFallback(file: File, maxDataUrlLength = 190
           ctx.clearRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0, w, h);
 
-          for (const q of [0.84, 0.72, 0.58]) {
+          for (const q of [0.8, 0.68, 0.56]) {
             const candidate = canvas.toDataURL(mime, q);
             if (candidate.length <= maxDataUrlLength) {
               resolve(candidate);
@@ -135,7 +133,7 @@ async function compressImageForInlineFallback(file: File, maxDataUrlLength = 190
           scale *= 0.75;
         }
 
-        resolve(canvas.toDataURL('image/jpeg', 0.5));
+        resolve(canvas.toDataURL('image/webp', 0.5));
       } catch {
         resolve(raw);
       }
@@ -166,7 +164,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  * WebP File before storing in Firebase Storage so visitor page loads stay fast.
  */
 async function optimizeImageForStorage(file: File): Promise<File> {
-  if (file.size <= 220 * 1024 || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+  if (file.size <= 90 * 1024 || file.type === 'image/gif' || file.type === 'image/svg+xml') {
     return file;
   }
 
@@ -177,7 +175,7 @@ async function optimizeImageForStorage(file: File): Promise<File> {
       try {
         let width = img.naturalWidth || img.width;
         let height = img.naturalHeight || img.height;
-        const maxSide = 1600;
+        const maxSide = 1280;
         if (width > maxSide || height > maxSide) {
           const ratio = Math.min(maxSide / width, maxSide / height);
           width = Math.max(1, Math.round(width * ratio));
@@ -205,7 +203,7 @@ async function optimizeImageForStorage(file: File): Promise<File> {
             }
           },
           'image/webp',
-          0.84
+          0.78
         );
       } catch {
         URL.revokeObjectURL(objectUrl);
@@ -237,7 +235,7 @@ export async function uploadMediaFile(file: File, folder = 'gallery'): Promise<s
     );
     return await withTimeout(getDownloadURL(snapshot.ref), 5000);
   } catch {
-    const compactDataUrl = await compressImageForInlineFallback(optimized, 190000);
+    const compactDataUrl = await compressImageForInlineFallback(optimized, 85000);
     try {
       const res = await fetch('/api/upload-image', {
         method: 'POST',

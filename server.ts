@@ -60,7 +60,13 @@ async function startServer() {
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
-  app.use('/uploads', express.static(uploadsDir));
+  app.use(
+    '/uploads',
+    express.static(uploadsDir, {
+      maxAge: '7d',
+      etag: true,
+    })
+  );
 
   // Health endpoint
   app.get('/api/health', (_req, res) => {
@@ -228,8 +234,27 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distDir = path.resolve(__dirname, 'dist');
-    app.use(express.static(distDir));
+    app.use(
+      '/assets',
+      express.static(path.join(distDir, 'assets'), {
+        maxAge: '365d',
+        immutable: true,
+        etag: true,
+      })
+    );
+    app.use(
+      express.static(distDir, {
+        maxAge: '1h',
+        etag: true,
+        setHeaders(res, filePath) {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
     app.get('*', (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }

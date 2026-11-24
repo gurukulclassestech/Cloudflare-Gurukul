@@ -3,7 +3,8 @@ import { Award, ExternalLink, X } from 'lucide-react';
 import { useSite } from '../context/SiteContext';
 import {
   DEFAULT_RESULT_CATEGORIES,
-  DEFAULT_RESULTS,
+  getResultSectionSubtitle,
+  mergePendingResults,
   resolveResultSection,
 } from '../data/defaults';
 import { subscribePublished } from '../lib/firestoreApi';
@@ -50,8 +51,7 @@ export function ResultsPage() {
     return () => unsub();
   }, []);
 
-  const isCustomized = site.customized_modules?.includes('results');
-  const displayItems = isCustomized ? items : items.length > 0 ? items : DEFAULT_RESULTS;
+  const displayItems = mergePendingResults(items, site.customized_modules);
 
   const sections = useMemo(
     () => [...new Set(displayItems.map((r) => resolveResultSection(r)))].sort(sortSectionNames),
@@ -178,7 +178,7 @@ export function ResultsPage() {
         ) : (
           grouped.map((group, idx) => (
             <section key={group.title} className="mt-12 first:mt-0">
-              <header className="relative overflow-hidden rounded-2xl border border-[hsl(var(--brand-navy))]/12 bg-white p-5 sm:p-7">
+              <header className="relative overflow-hidden rounded-2xl border border-[hsl(var(--brand-navy))]/15 border-l-4 border-l-[#FFBE1B] bg-white p-5 shadow-xs sm:p-7">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4 sm:gap-5">
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[hsl(var(--brand-navy))] text-base font-bold text-[#FFBE1B] tabular-nums">
@@ -186,19 +186,22 @@ export function ResultsPage() {
                     </span>
                     <div>
                       <p className="eyebrow">{pt.extra_label_1 || 'Result section'}</p>
-                      <h2 className="display-face mt-1 text-2xl leading-tight text-[hsl(var(--brand-navy))] sm:text-[1.9rem]">
+                      <h2 className="display-face mt-1 text-2xl leading-tight text-[hsl(var(--brand-navy))] sm:text-[2rem]">
                         {group.title}
                       </h2>
+                      <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))] sm:text-sm">
+                        {getResultSectionSubtitle(group.title)}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))] tabular-nums">
+                  <span className="inline-flex w-fit items-center rounded-lg border border-[hsl(var(--brand-navy))]/12 bg-[hsl(var(--brand-surface))] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide text-[hsl(var(--brand-navy))] tabular-nums">
                     {group.results.length} {group.results.length === 1 ? 'Result' : 'Results'}
-                  </p>
+                  </span>
                 </div>
               </header>
 
               <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {group.results.map((res) => (
+                {group.results.map((res, resIdx) => (
                   <article
                     key={res.id}
                     className={`surface surface-hover flex flex-col overflow-hidden ${
@@ -216,6 +219,8 @@ export function ResultsPage() {
                           src={res.photo_url}
                           alt={res.student_name}
                           fit="contain"
+                          variant="card"
+                          eager={idx === 0 && resIdx < 3}
                           className="h-full w-full"
                         />
                       </button>
@@ -307,6 +312,8 @@ export function ResultsPage() {
               src={activePoster.photo_url}
               alt={activePoster.student_name}
               fit="contain"
+              variant="full"
+              eager
               className="mx-auto aspect-square max-h-[75vh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
             />
             <p className="mt-2.5 px-1 text-sm font-semibold text-[hsl(var(--brand-navy))]">

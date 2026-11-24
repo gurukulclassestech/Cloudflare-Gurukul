@@ -60,22 +60,45 @@ export const DEFAULT_COURSE_CATEGORIES = [
 ];
 
 export const DEFAULT_RESULT_CATEGORIES = [
+  'JEE Advanced',
+  'JEE Main',
   'IIT-JEE',
   'NEET',
   'MHT-CET',
   'Foundation',
-  'Board Exams',
+  'Olympiad & NTSE',
+  'Board Exams (SSC / HSC)',
 ];
+
+export const RESULT_SECTION_SUBTITLES: Record<string, string> = {
+  'JEE Advanced': 'IIT entrance — All India Ranks & qualified performers',
+  'JEE Main': 'NIT, IIIT & national engineering entrance percentiles & ranks',
+  'IIT-JEE': 'IIT-JEE (Main & Advanced) qualifiers & top rankers',
+  NEET: 'Medical entrance (NEET-UG) top scores & selections',
+  'MHT-CET': 'Maharashtra engineering & pharmacy entrance top percentiles',
+  Foundation: 'Early competitive preparation (Classes VIII–X) top achievers',
+  'Olympiad & NTSE': 'National & state science and mathematics scholarship qualifiers',
+  'Board Exams (SSC / HSC)': 'Class 10 & Class 12 board merit holders',
+};
+
+export function getResultSectionSubtitle(section: string): string {
+  return RESULT_SECTION_SUBTITLES[section] || 'Verified student ranks, scores and selections';
+}
 
 export function resolveResultSection(res: Pick<StudentResult, 'category' | 'achievement_title'>): string {
   const explicit = (res.category || '').trim();
   if (explicit) return explicit;
   const title = (res.achievement_title || '').toLowerCase();
+  if (title.includes('jee adv') || title.includes('advanced')) return 'JEE Advanced';
+  if (title.includes('jee main') || title.includes('mains')) return 'JEE Main';
   if (title.includes('neet')) return 'NEET';
   if (title.includes('iit') || title.includes('jee')) return 'IIT-JEE';
   if (title.includes('cet')) return 'MHT-CET';
+  if (title.includes('olympiad') || title.includes('ntse')) return 'Olympiad & NTSE';
   if (title.includes('foundation')) return 'Foundation';
-  if (title.includes('board') || title.includes('ssc') || title.includes('hsc')) return 'Board Exams';
+  if (title.includes('board') || title.includes('ssc') || title.includes('hsc')) {
+    return 'Board Exams (SSC / HSC)';
+  }
   return 'Other Achievements';
 }
 
@@ -800,6 +823,154 @@ export const DEFAULT_EXAMS: Exam[] = [
   },
 ];
 
+export const RESULTS_BATCH_SYNC_KEY = 'results_batch_2026_11_v3_synced';
+
+export const LATEST_UPLOADED_RESULTS: StudentResult[] = [
+  {
+    id: 'res-sarthak-athawale',
+    student_name: 'Sarthak Athawale',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 24 (PRE)',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/Gurukul_Result_5_1254x1254_d2f78876.png',
+    document_url: '',
+    display_order: 7,
+    is_featured: true,
+    is_published: true,
+  },
+  {
+    id: 'res-varad-bochare',
+    student_name: 'Varad V. Bochare',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 738',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/image_e58b14c0.png',
+    document_url: '',
+    display_order: 8,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-soumyadeep-giri',
+    student_name: 'Soumyadeep Giri',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 1803',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/Gurukul_Result_1_1254x1254_beb95bdc.png',
+    document_url: '',
+    display_order: 9,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-gururav-gaikwad',
+    student_name: 'Gururav Gaikwad',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 2502',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/Gurukul_Result_2_1254x1254_bd849c56.png',
+    document_url: '',
+    display_order: 10,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-shubham-nemane',
+    student_name: 'Shubham D. Nemane',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 4302',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/image_bbd5b0e7.png',
+    document_url: '',
+    display_order: 11,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-pranav-gaikwad',
+    student_name: 'Pranav K. Gaikwad',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 4884',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/image_c24c3524.png',
+    document_url: '',
+    display_order: 12,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-mahee-salunke',
+    student_name: 'Mahee Salunke',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 6035',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/Gurukul_Result_3_1254x1254_641dd8d5.png',
+    document_url: '',
+    display_order: 13,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-amey-nimbalkar',
+    student_name: 'Amey M. Nimbalkar',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 6219',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/image_e434d8dc.png',
+    document_url: '',
+    display_order: 14,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-jayesh-nemade',
+    student_name: 'Jayesh P. Nemade',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 8539',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/Gurukul_Result_7_1254x1254_fef39c36.png',
+    document_url: '',
+    display_order: 15,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-athrva-sonawane',
+    student_name: 'Athrva Sonawane',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 9642',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/Gurukul_Result_4_1254x1254_31899bee.png',
+    document_url: '',
+    display_order: 16,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-aniket-ghuge',
+    student_name: 'Aniket Ghuge',
+    achievement_title: 'JEE Advanced',
+    score: 'AIR 10322',
+    category: 'JEE Advanced',
+    academic_year: '',
+    photo_url: '/assets/aistudio/Gurukul_Result_6_1254x1254_0f9e2e0f.png',
+    document_url: '',
+    display_order: 17,
+    is_featured: false,
+    is_published: true,
+  },
+];
+
 export const DEFAULT_RESULTS: StudentResult[] = [
   {
     id: 'res-atharv-nandapurkar',
@@ -815,7 +986,34 @@ export const DEFAULT_RESULTS: StudentResult[] = [
     is_featured: true,
     is_published: true,
   },
+  ...LATEST_UPLOADED_RESULTS,
 ];
+
+export function mergePendingResults(
+  dbItems: StudentResult[],
+  customizedModules: string[] = []
+): StudentResult[] {
+  const isCustomized = customizedModules.includes('results');
+  const isBatchSynced = customizedModules.includes(RESULTS_BATCH_SYNC_KEY);
+
+  if (isBatchSynced) {
+    return dbItems;
+  }
+
+  const base = isCustomized || dbItems.length > 0 ? dbItems : DEFAULT_RESULTS;
+  const existingIds = new Set(base.map((r) => r.id));
+  const existingNames = new Set(base.map((r) => (r.student_name || '').trim().toLowerCase()));
+
+  const additions = LATEST_UPLOADED_RESULTS.filter(
+    (item) =>
+      !existingIds.has(item.id) &&
+      !existingNames.has((item.student_name || '').trim().toLowerCase())
+  );
+
+  return [...base, ...additions].sort(
+    (a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)
+  );
+}
 
 export const DEFAULT_TESTIMONIALS: Testimonial[] = [
   {
