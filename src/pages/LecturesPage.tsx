@@ -171,11 +171,11 @@ export function LecturesPage() {
           role="dialog"
           aria-modal="true"
           aria-label={activeLecture.title}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/75 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/75 p-3 sm:p-4"
         >
-          <div className="surface relative w-full max-w-3xl overflow-hidden p-4 sm:p-6">
+          <div className="surface relative max-h-[90dvh] w-full max-w-3xl overflow-y-auto p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0">
                 <p className="eyebrow">
                   {activeLecture.subject} · {activeLecture.class_level}
                 </p>
@@ -187,7 +187,7 @@ export function LecturesPage() {
                 type="button"
                 onClick={() => setActiveLecture(null)}
                 aria-label="Close lecture"
-                className="grid h-9 w-9 place-items-center rounded-lg text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--brand-surface))]"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--brand-surface))]"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>

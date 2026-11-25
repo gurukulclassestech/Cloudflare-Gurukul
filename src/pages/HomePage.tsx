@@ -134,7 +134,7 @@ function HeroSection({ section }: { section: HomepageSection }) {
   const deadline = current?.deadline;
 
   return (
-    <section className="relative flex min-h-[560px] items-center overflow-hidden bg-[#0B1D40] text-white sm:min-h-[600px] lg:min-h-[660px]">
+    <section className="relative flex min-h-[430px] items-center overflow-hidden bg-[#0B1D40] text-white sm:min-h-[560px] lg:min-h-[640px]">
       {mobileImageUrl ? (
         <>
           <SafeImage
@@ -160,6 +160,10 @@ function HeroSection({ section }: { section: HomepageSection }) {
       )}
 
       <div
+        className="pointer-events-none absolute inset-0 bg-[#07132A]/55 sm:bg-transparent"
+        aria-hidden="true"
+      />
+      <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
@@ -168,23 +172,23 @@ function HeroSection({ section }: { section: HomepageSection }) {
         aria-hidden="true"
       />
 
-      <div className="shell relative w-full py-12 sm:py-16 lg:py-20">
+      <div className="shell relative w-full py-9 sm:py-16 lg:py-20">
         <div className="rise-in w-full max-w-2xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#FFBE1B] backdrop-blur-xs">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>
+          <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#FFBE1B] backdrop-blur-xs">
+            <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="min-w-0">
               {deadline
                 ? `Admissions close ${formatDate(deadline)}`
                 : section.eyebrow || 'Admissions open · Chhatrapati Sambhajinagar'}
             </span>
           </span>
 
-          <h1 className="display-face mt-5 text-[2.1rem] leading-[1.08] text-white sm:text-[3.15rem] lg:text-[3.65rem]">
+          <h1 className="display-face mt-4 text-[1.85rem] leading-[1.12] text-white sm:mt-5 sm:text-[3.15rem] lg:text-[3.65rem]">
             {title}
           </h1>
 
           {subtitle && (
-            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/85 sm:text-[17px]">
+            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-white/85 sm:mt-4 sm:text-[17px]">
               {subtitle}
             </p>
           )}
@@ -290,7 +294,7 @@ function IntroSection({ section }: { section: HomepageSection }) {
     <section className="shell py-14 sm:py-20">
       <div className="grid items-center gap-10 lg:grid-cols-2">
         <div className="relative order-2 lg:order-1">
-          <div className="h-[280px] overflow-hidden rounded-2xl sm:h-[400px]">
+          <div className="h-[230px] overflow-hidden rounded-2xl sm:h-[400px]">
             <SafeImage
               src={section.image_url || SITE_IMAGES.mentoring}
               alt={section.title || 'Mentoring at the institute'}
@@ -472,13 +476,13 @@ function AchievementsHomeSection({
         </div>
 
         {section.items && section.items.length > 0 && (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {section.items.map((item, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-white/15 bg-white/8 p-5 backdrop-blur-xs"
+                className="rounded-xl border border-white/15 bg-white/8 p-4 backdrop-blur-xs sm:p-5"
               >
-                <p className="display-face text-3xl text-[#FFBE1B] tabular-nums">
+                <p className="display-face text-2xl text-[#FFBE1B] tabular-nums sm:text-3xl">
                   {item.value || item.title}
                 </p>
                 <p className="mt-1 text-xs font-medium text-white/80">
@@ -490,11 +494,11 @@ function AchievementsHomeSection({
         )}
 
         {!loading && resultSections.length > 1 && (
-          <div className="mt-8 flex flex-wrap items-center gap-2">
+          <div className="mt-8 flex flex-wrap items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => setSelectedSection('')}
-              className={`rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition sm:px-3.5 ${
                 selectedSection === ''
                   ? 'border-[#FFBE1B] bg-[#FFBE1B] text-[#122B5C]'
                   : 'border-white/20 bg-white/8 text-white hover:bg-white/15'
@@ -572,12 +576,16 @@ function AchievementsHomeSection({
                             />
                           </div>
                         )}
-                        <div className="p-5">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="display-face text-3xl text-[#FFBE1B] tabular-nums">
+                        <div className="p-4 sm:p-5">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p
+                              className={`display-face text-[#FFBE1B] tabular-nums ${
+                                (res.score || '').length > 10 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
+                              }`}
+                            >
                               {res.score}
                             </p>
-                            <span className="rounded-full border border-[#FFBE1B]/40 bg-[#FFBE1B]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FFBE1B]">
+                            <span className="shrink-0 rounded-full border border-[#FFBE1B]/40 bg-[#FFBE1B]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FFBE1B]">
                               {resolveResultSection(res)}
                             </span>
                           </div>
@@ -725,7 +733,7 @@ export function HomePage() {
         },
         'display_order',
         'asc',
-        30,
+        100,
         () => markSettled('results')
       ),
       subscribePublished<Testimonial>(
@@ -1084,7 +1092,7 @@ export function HomePage() {
                 className="bg-[hsl(var(--brand-surface))] py-14 sm:py-20"
               >
                 <div className="shell grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-                  <div>
+                  <div className="min-w-0">
                     <p className="eyebrow">{section.eyebrow || 'Enquiry'}</p>
                     <h2 className="display-face mt-3 text-[1.9rem] leading-tight text-[hsl(var(--brand-navy))] sm:text-[2.45rem]">
                       {section.title}
@@ -1100,7 +1108,7 @@ export function HomePage() {
                       </p>
                     )}
                   </div>
-                  <div className="surface p-5 sm:p-7">
+                  <div className="surface min-w-0 p-5 sm:p-7">
                     <EnquiryForm source="home-page" submitLabel="Submit enquiry" />
                   </div>
                 </div>
@@ -1200,9 +1208,9 @@ export function HomePage() {
           default:
             return (
               <section key={section.id || section.key} className="shell py-14 sm:py-16">
-                <div className="surface overflow-hidden p-6 sm:p-8">
+                <div className="surface overflow-hidden p-5 sm:p-8">
                   <div className={section.image_url ? 'grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]' : ''}>
-                    <div>
+                    <div className="min-w-0">
                       {section.eyebrow && <p className="eyebrow mb-2">{section.eyebrow}</p>}
                       <h2 className="display-face text-2xl text-[hsl(var(--brand-navy))] sm:text-3xl">
                         {section.title}
@@ -1228,7 +1236,7 @@ export function HomePage() {
                       )}
                     </div>
                     {section.image_url && (
-                      <div className="h-64 overflow-hidden rounded-xl bg-[hsl(var(--brand-surface))] sm:h-72">
+                      <div className="h-56 min-w-0 overflow-hidden rounded-xl bg-[hsl(var(--brand-surface))] sm:h-72">
                         <SafeImage
                           src={section.image_url}
                           alt={section.title}
@@ -1293,11 +1301,11 @@ export function HomePage() {
           role="dialog"
           aria-modal="true"
           aria-label={activeLecture.title}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/75 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/75 p-3 sm:p-4"
         >
-          <div className="surface relative w-full max-w-3xl overflow-hidden p-4 sm:p-6">
+          <div className="surface relative max-h-[90dvh] w-full max-w-3xl overflow-y-auto p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0">
                 <p className="eyebrow">
                   {activeLecture.subject} · {activeLecture.class_level}
                 </p>
@@ -1309,7 +1317,7 @@ export function HomePage() {
                 type="button"
                 onClick={() => setActiveLecture(null)}
                 aria-label="Close lecture"
-                className="grid h-9 w-9 place-items-center rounded-lg text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--brand-surface))]"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--brand-surface))]"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -1341,11 +1349,11 @@ export function HomePage() {
           role="dialog"
           aria-modal="true"
           aria-label={activeImage.title || 'Gallery photograph'}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/80 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/80 p-3 sm:p-4"
           onClick={() => setActiveImage(null)}
         >
           <div
-            className="surface relative w-full max-w-3xl p-3 sm:p-4"
+            className="surface relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto p-3 sm:p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -1360,7 +1368,7 @@ export function HomePage() {
               src={activeImage.file_url}
               alt={activeImage.title || 'Gallery photograph'}
               fit="contain"
-              className="max-h-[75vh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
+              className="max-h-[75dvh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
             />
             {(activeImage.title || activeImage.caption) && (
               <p className="mt-2.5 px-1 text-sm text-[hsl(var(--muted-foreground))]">

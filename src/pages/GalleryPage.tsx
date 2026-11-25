@@ -148,11 +148,11 @@ export function GalleryPage() {
           role="dialog"
           aria-modal="true"
           aria-label={activeItem.title || 'Gallery photograph'}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/80 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/80 p-3 sm:p-4"
           onClick={() => setActiveItem(null)}
         >
           <div
-            className="surface relative w-full max-w-3xl p-3 sm:p-4"
+            className="surface relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto p-3 sm:p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -169,7 +169,7 @@ export function GalleryPage() {
               fit="contain"
               variant="full"
               eager
-              className="max-h-[72vh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
+              className="max-h-[72dvh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
             />
             {(activeItem.title || activeItem.caption) && (
               <p className="mt-2.5 px-1 text-sm text-[hsl(var(--muted-foreground))]">

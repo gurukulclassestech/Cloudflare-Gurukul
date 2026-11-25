@@ -102,6 +102,15 @@ export function AdminLayout() {
     setDrawerOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [drawerOpen]);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[hsl(var(--brand-surface))]">
@@ -191,7 +200,7 @@ export function AdminLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--brand-surface))]">
+    <div className="min-h-[100dvh] bg-[hsl(var(--brand-surface))]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-[hsl(var(--border))] bg-white lg:block">
         {sidebarContent}
       </aside>
@@ -202,7 +211,7 @@ export function AdminLayout() {
             className="absolute inset-0 bg-[#0B1D40]/50"
             onClick={() => setDrawerOpen(false)}
           />
-          <div className="relative h-full w-[80vw] max-w-xs bg-white shadow-2xl">
+          <div className="relative h-[100dvh] w-[80vw] max-w-xs bg-white shadow-2xl">
             {sidebarContent}
           </div>
         </div>

@@ -97,10 +97,10 @@ export function PageHeroBanner({
         }}
         aria-hidden="true"
       />
-      <div className="shell relative py-12 sm:py-16">
+      <div className="shell relative py-10 sm:py-16">
         <div className="rise-in max-w-3xl">
           {eyebrow && <p className="eyebrow text-[#FFBE1B]">{eyebrow}</p>}
-          <h1 className="display-face mt-3 text-[2rem] leading-[1.1] sm:text-[2.75rem] lg:text-5xl">
+          <h1 className="display-face mt-3 text-[1.85rem] leading-[1.12] sm:text-[2.75rem] lg:text-5xl">
             {title}
           </h1>
           {description && (
@@ -240,19 +240,19 @@ export function CourseEnquiryButton({
           role="dialog"
           aria-modal="true"
           aria-label={`Enquire about ${courseName}`}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/65 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/65 p-3 backdrop-blur-xs sm:p-4"
           onClick={() => setOpen(false)}
         >
           <div
-            className="surface max-h-[90vh] w-full max-w-xl overflow-y-auto"
+            className="surface max-h-[90dvh] w-full max-w-xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative bg-[hsl(var(--brand-navy))] px-6 py-5 text-white">
+            <div className="relative bg-[hsl(var(--brand-navy))] px-4 py-4 text-white sm:px-6 sm:py-5">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="absolute right-4 top-4 rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
+                className="absolute right-3 top-3 rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white sm:right-4 sm:top-4"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -262,7 +262,7 @@ export function CourseEnquiryButton({
                 Share a few details and our admissions team will call you with batch timings and the fee structure.
               </p>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <EnquiryForm
                 source={`course-enquiry:${courseName}`}
                 defaultCourse={courseName}
@@ -387,7 +387,7 @@ export function ExamCard({ exam }: { exam: Exam }) {
 
   return (
     <article className="surface surface-hover flex h-full flex-col p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           {exam.course_category && (
             <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--brand-blue))]">
@@ -527,7 +527,7 @@ export function LectureCard({
         </span>
       </button>
       <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center gap-2 text-xs text-[hsl(var(--muted-foreground))]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[hsl(var(--muted-foreground))]">
           <span className="font-semibold text-[hsl(var(--brand-blue))]">{lecture.subject}</span>
           <span aria-hidden="true">·</span>
           <span>{lecture.class_level}</span>
@@ -546,7 +546,7 @@ export function LectureCard({
             {truncateText(lecture.description, 100)}
           </p>
         )}
-        <div className="mt-4 flex items-center justify-between border-t border-[hsl(var(--border))] pt-3 text-xs">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[hsl(var(--border))] pt-3 text-xs">
           <span className="text-[hsl(var(--muted-foreground))]">
             {lecture.teacher_name || 'Gurukul Faculty'}
           </span>
@@ -661,7 +661,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
         />
       </Link>
       <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center gap-2 text-xs text-[hsl(var(--muted-foreground))]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[hsl(var(--muted-foreground))]">
           {post.category && (
             <>
               <span className="font-semibold text-[hsl(var(--brand-blue))]">{post.category}</span>
@@ -681,7 +681,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
         <p className="mt-2 flex-1 text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
           {post.excerpt || truncateText(post.content, 120)}
         </p>
-        <div className="mt-4 flex items-center justify-between border-t border-[hsl(var(--border))] pt-3 text-xs">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[hsl(var(--border))] pt-3 text-xs">
           {post.author ? (
             <span className="inline-flex items-center gap-1 text-[hsl(var(--muted-foreground))]">
               <User className="h-3 w-3" aria-hidden="true" />
@@ -720,7 +720,7 @@ export function GalleryTile({
         src={item.file_url}
         alt={item.title || item.caption || 'Institute photograph'}
         variant="card"
-        className="h-48 w-full transition-transform duration-500 group-hover:scale-[1.04]"
+        className="h-36 w-full transition-transform duration-500 group-hover:scale-[1.04] sm:h-48"
       />
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0B1D40]/85 via-[#0B1D40]/35 to-transparent p-3">
         <span className="block text-sm font-semibold text-white">

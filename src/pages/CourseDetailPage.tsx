@@ -175,8 +175,8 @@ export function CourseDetailPage() {
       </PageHeroBanner>
 
       <section className="shell grid gap-10 py-12 sm:py-16 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-        <div className="space-y-8">
-          <div className="h-[260px] overflow-hidden rounded-2xl bg-[hsl(var(--brand-surface))] sm:h-[380px]">
+        <div className="min-w-0 space-y-8">
+          <div className="h-[220px] overflow-hidden rounded-2xl bg-[hsl(var(--brand-surface))] sm:h-[380px]">
             <SafeImage
               src={course.image_url || SITE_IMAGES.classroom}
               alt={course.name}
@@ -236,9 +236,9 @@ export function CourseDetailPage() {
           )}
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-24">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-24">
           <div className="surface overflow-hidden">
-            <div className="bg-[hsl(var(--brand-navy))] px-6 py-5 text-white">
+            <div className="bg-[hsl(var(--brand-navy))] px-5 py-5 text-white sm:px-6">
               <p className="eyebrow text-[#FFBE1B]">
                 {pt.eyebrow || 'Admission / Enquiry'}
               </p>
@@ -248,7 +248,7 @@ export function CourseDetailPage() {
                   'Share your details and our admissions team will confirm batch timings and seat availability.'}
               </p>
             </div>
-            <div className="p-6">
+            <div className="p-5 sm:p-6">
               <EnquiryForm
                 source={`course:${course.slug || course.id}`}
                 defaultCourse={course.name}
@@ -258,8 +258,8 @@ export function CourseDetailPage() {
             </div>
           </div>
 
-          <div className="surface flex items-center justify-between p-5">
-            <div>
+          <div className="surface flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
                 {pt.secondary_eyebrow || 'Ready to apply?'}
               </p>
@@ -269,7 +269,7 @@ export function CourseDetailPage() {
             </div>
             <Link
               to={`/admission?course=${encodeURIComponent(course.name)}`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#FFBE1B] px-3.5 py-2 text-xs font-bold text-[#122B5C] hover:bg-[#f2b211]"
+              className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg bg-[#FFBE1B] px-3.5 py-2 text-xs font-bold text-[#122B5C] hover:bg-[#f2b211]"
             >
               <span>Apply</span>
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

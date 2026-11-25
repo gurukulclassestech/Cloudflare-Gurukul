@@ -52,11 +52,11 @@ export function AboutPage() {
       {/* Highlights strip */}
       {highlights.length > 0 && (
         <section className="shell -mt-6 relative z-10">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {highlights.map((h, idx) => (
               <div
                 key={`${h.label}-${idx}`}
-                className="surface border-t-2 border-t-[#FFBE1B] p-5 text-center shadow-sm"
+                className="surface border-t-2 border-t-[#FFBE1B] p-4 text-center shadow-sm sm:p-5"
               >
                 <p className="display-face text-2xl text-[hsl(var(--brand-navy))] sm:text-[1.75rem]">
                   {h.value}
@@ -72,7 +72,7 @@ export function AboutPage() {
 
       {/* Story & Image */}
       <section className="shell grid items-start gap-10 py-14 sm:py-20 lg:grid-cols-[1.15fr_0.85fr]">
-        <div>
+        <div className="min-w-0">
           <p className="eyebrow">{pt.title || 'Our story & philosophy'}</p>
           <h2 className="display-face mt-3 text-[1.8rem] leading-tight text-[hsl(var(--brand-navy))] sm:text-4xl">
             {intro?.title || "Study with Enjoyment — Since 2009"}
@@ -113,8 +113,8 @@ export function AboutPage() {
           </div>
         </div>
 
-        <div className="space-y-4 lg:sticky lg:top-24">
-          <div className="h-[300px] overflow-hidden rounded-2xl sm:h-[400px]">
+        <div className="min-w-0 space-y-4 lg:sticky lg:top-24">
+          <div className="h-[230px] overflow-hidden rounded-2xl sm:h-[400px]">
             <SafeImage
               src={intro?.image_url || SITE_IMAGES.mentoring}
               alt={intro?.title || 'Institute teaching'}
@@ -177,7 +177,7 @@ export function AboutPage() {
       {/* Visit the institute CTA */}
       <section className="shell py-14 sm:py-20">
         <div className="surface flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-          <div>
+          <div className="min-w-0">
             <p className="eyebrow">{pt.extra_label_2 || 'Visit the institute'}</p>
             <h2 className="display-face mt-2 text-2xl text-[hsl(var(--brand-navy))] sm:text-3xl">
               {pt.secondary_title || 'Meet our teachers and review the batch plan'}

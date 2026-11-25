@@ -30,8 +30,8 @@ export function Footer() {
   ].filter((s) => Boolean(s.href));
 
   return (
-    <footer className="mt-20 bg-[hsl(var(--brand-navy-deep))] text-white/75">
-      <div className="shell grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="mt-14 bg-[hsl(var(--brand-navy-deep))] text-white/75 sm:mt-20">
+      <div className="shell grid gap-8 py-10 sm:grid-cols-2 sm:gap-10 sm:py-14 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2.5">
             <BrandLogo site={site} className="bg-white/95 p-1" />
@@ -134,9 +134,9 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="shell flex flex-col items-center justify-between gap-3 py-5 text-xs text-white/60 sm:flex-row">
+        <div className="shell flex flex-col items-center justify-between gap-3 pb-20 pt-5 text-center text-xs text-white/60 sm:flex-row sm:py-5 sm:text-left">
           <p>{site.footer_copyright}</p>
-          <div className="flex flex-wrap items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
             <Link to="/privacy-policy" className="hover:text-white">
               {pt.secondary_description || 'Privacy Policy'}
             </Link>

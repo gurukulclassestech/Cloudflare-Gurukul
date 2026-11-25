@@ -844,7 +844,65 @@ export const DEFAULT_EXAMS: Exam[] = [
   },
 ];
 
-export const RESULTS_BATCH_SYNC_KEY = 'results_batch_2026_11_v4_synced';
+export const PRIOR_RESULTS_BATCH_SYNC_KEYS = [
+  'results_batch_2026_11_v4_synced',
+  'results_batch_2026_11_v5_synced',
+  'results_batch_2026_11_v6_synced',
+];
+export const RESULTS_BATCH_SYNC_KEY = 'results_batch_2026_11_v7_synced';
+
+export const RESULT_POSTER_UPDATES: Array<{
+  matchIds: string[];
+  matchNames: string[];
+  student_name: string;
+  photo_url: string;
+}> = [
+  {
+    matchIds: ['UlgaesEIzfL8cSfRdvcp'],
+    matchNames: ['akash borulkar'],
+    student_name: 'Akash Borulkar',
+    photo_url: '/assets/gurukul/results/image_0ce81881.webp',
+  },
+  {
+    matchIds: ['IVMhR8qcO3i0aMZIlFjk'],
+    matchNames: ['shreejeet golhait', 'shrijeet golhait'],
+    student_name: 'Shrijeet Golhait',
+    photo_url: '/assets/gurukul/results/image_eb35deb2.webp',
+  },
+];
+
+export function getPendingResultPatch(
+  rec: Pick<StudentResult, 'id' | 'student_name' | 'score' | 'category' | 'achievement_title' | 'photo_url'>
+): Partial<Pick<StudentResult, 'student_name' | 'photo_url' | 'score'>> | null {
+  const normName = (rec.student_name || '').trim().toLowerCase();
+  const posterMatch = RESULT_POSTER_UPDATES.find(
+    (u) => u.matchIds.includes(rec.id) || u.matchNames.includes(normName)
+  );
+
+  const patch: Partial<Pick<StudentResult, 'student_name' | 'photo_url' | 'score'>> = {};
+  if (posterMatch) {
+    if (rec.student_name !== posterMatch.student_name) {
+      patch.student_name = posterMatch.student_name;
+    }
+    if (rec.photo_url !== posterMatch.photo_url) {
+      patch.photo_url = posterMatch.photo_url;
+    }
+  }
+
+  const section = resolveResultSection({
+    category: rec.category,
+    achievement_title: rec.achievement_title,
+  });
+  const effectiveName = (patch.student_name || rec.student_name || '').trim().toLowerCase();
+  if (section === 'IIT-JEE' && !effectiveName.includes('omkar')) {
+    const rawScore = (rec.score || '').trim();
+    if (rawScore && !/\breserved\b/i.test(rawScore)) {
+      patch.score = `${rawScore} (Reserved)`.slice(0, 60);
+    }
+  }
+
+  return Object.keys(patch).length > 0 ? patch : null;
+}
 
 export const LATEST_UPLOADED_RESULTS: StudentResult[] = [
   {
@@ -992,12 +1050,106 @@ export const LATEST_UPLOADED_RESULTS: StudentResult[] = [
   },
 ];
 
+export const NEET_UPLOADED_RESULTS: StudentResult[] = [
+  {
+    id: 'res-utkarsh-zawar',
+    student_name: 'Utkarsh Zawar',
+    achievement_title: 'NEET-UG · Selected at AIIMS (MBBS)',
+    score: 'AIIMS (MBBS)',
+    category: 'NEET',
+    academic_year: '',
+    photo_url: '/assets/gurukul/results/image_a445aa08.webp',
+    document_url: '',
+    display_order: 18,
+    is_featured: true,
+    is_published: true,
+  },
+  {
+    id: 'res-yash-rathi',
+    student_name: 'Yash Rathi',
+    achievement_title: 'NEET-UG · Selected at AIIMS (MBBS)',
+    score: 'AIIMS (MBBS)',
+    category: 'NEET',
+    academic_year: '',
+    photo_url: '/assets/gurukul/results/image_f87a5bd1.webp',
+    document_url: '',
+    display_order: 19,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-prasad-wahatule',
+    student_name: 'Prasad Wahatule',
+    achievement_title: 'NEET-UG · Selected at AIIMS (MBBS)',
+    score: 'AIIMS (MBBS)',
+    category: 'NEET',
+    academic_year: '',
+    photo_url: '/assets/gurukul/results/image_1c150f0f.webp',
+    document_url: '',
+    display_order: 20,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-suyash-kulkarni',
+    student_name: 'Suyash Kulkarni',
+    achievement_title: 'NEET-UG · Selected at AIIMS (MBBS)',
+    score: 'AIIMS (MBBS)',
+    category: 'NEET',
+    academic_year: '',
+    photo_url: '/assets/gurukul/results/image_690738ba.webp',
+    document_url: '',
+    display_order: 21,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-saket-deokar',
+    student_name: 'Saket Deokar',
+    achievement_title: 'NEET-UG · Selected at AIIMS Bhopal (MBBS)',
+    score: 'AIIMS Bhopal (MBBS)',
+    category: 'NEET',
+    academic_year: '',
+    photo_url: '/assets/gurukul/results/image_69e5e73d.webp',
+    document_url: '',
+    display_order: 22,
+    is_featured: true,
+    is_published: true,
+  },
+  {
+    id: 'res-rahul-tupe',
+    student_name: 'Rahul Tupe',
+    achievement_title: 'NEET-UG · Selected at AIIMS (MBBS)',
+    score: 'AIIMS (MBBS)',
+    category: 'NEET',
+    academic_year: '',
+    photo_url: '/assets/gurukul/results/image_286fec00.webp',
+    document_url: '',
+    display_order: 23,
+    is_featured: false,
+    is_published: true,
+  },
+  {
+    id: 'res-ruchita-kulkarni',
+    student_name: 'Ruchita Kulkarni',
+    achievement_title: 'NEET-UG · Selected at AIIMS (MBBS)',
+    score: 'AIIMS (MBBS)',
+    category: 'NEET',
+    academic_year: '',
+    photo_url: '/assets/gurukul/results/image_d64f0e3d.webp',
+    document_url: '',
+    display_order: 24,
+    is_featured: false,
+    is_published: true,
+  },
+];
+
 export const DEFAULT_RESULTS: StudentResult[] = [
   {
     id: 'res-atharv-nandapurkar',
     student_name: 'Atharv Nandapurkar',
     achievement_title: 'IIT-JEE',
-    score: 'AIR 3',
+    score: 'AIR 3 (Reserved)',
     category: 'IIT-JEE',
     class_level: 'Class 12',
     academic_year: '2025-26',
@@ -1008,6 +1160,7 @@ export const DEFAULT_RESULTS: StudentResult[] = [
     is_published: true,
   },
   ...LATEST_UPLOADED_RESULTS,
+  ...NEET_UPLOADED_RESULTS,
 ];
 
 export function mergePendingResults(
@@ -1021,17 +1174,33 @@ export function mergePendingResults(
     return dbItems;
   }
 
-  const base = isCustomized || dbItems.length > 0 ? dbItems : DEFAULT_RESULTS;
+  const isPriorBatchSynced = PRIOR_RESULTS_BATCH_SYNC_KEYS.some((k) =>
+    customizedModules.includes(k)
+  );
+  const baseRaw = isCustomized || dbItems.length > 0 ? dbItems : DEFAULT_RESULTS;
+  const base = baseRaw.map((item) => {
+    const patch = getPendingResultPatch(item);
+    return patch ? { ...item, ...patch } : item;
+  });
+
   const existingIds = new Set(base.map((r) => r.id));
   const existingNames = new Set(base.map((r) => (r.student_name || '').trim().toLowerCase()));
 
-  const additions = LATEST_UPLOADED_RESULTS.filter(
+  const pendingJee = isPriorBatchSynced
+    ? []
+    : LATEST_UPLOADED_RESULTS.filter(
+        (item) =>
+          !existingIds.has(item.id) &&
+          !existingNames.has((item.student_name || '').trim().toLowerCase())
+      );
+
+  const pendingNeet = NEET_UPLOADED_RESULTS.filter(
     (item) =>
       !existingIds.has(item.id) &&
       !existingNames.has((item.student_name || '').trim().toLowerCase())
   );
 
-  return [...base, ...additions].sort(
+  return [...base, ...pendingJee, ...pendingNeet].sort(
     (a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)
   );
 }

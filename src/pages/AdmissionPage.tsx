@@ -157,7 +157,7 @@ export function AdmissionPage() {
       </PageHeroBanner>
 
       <section className="shell grid gap-8 py-12 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-        <div className="surface p-5 sm:p-7">
+        <div className="surface min-w-0 p-5 sm:p-7">
           <h2 className="display-face text-2xl text-[hsl(var(--brand-navy))]">
             {pt.secondary_title || 'Admission application'}
           </h2>
@@ -383,7 +383,7 @@ export function AdmissionPage() {
           )}
         </div>
 
-        <aside className="space-y-3">
+        <aside className="min-w-0 space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(var(--brand-blue))]">
             {pt.extra_label_1 || 'How admission works'}
           </h2>
@@ -442,7 +442,7 @@ export function AdmissionPage() {
                   <p className="text-xs font-bold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
                     UPI ID
                   </p>
-                  <p className="mt-1 font-mono font-semibold text-[hsl(var(--brand-navy))]">
+                  <p className="mt-1 break-all font-mono font-semibold text-[hsl(var(--brand-navy))]">
                     {site.upi_id}
                   </p>
                 </div>

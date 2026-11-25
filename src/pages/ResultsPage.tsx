@@ -178,7 +178,7 @@ export function ResultsPage() {
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[hsl(var(--brand-navy))] text-base font-bold text-[#FFBE1B] tabular-nums">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="eyebrow">{pt.extra_label_1 || 'Result section'}</p>
                       <h2 className="display-face mt-1 text-2xl leading-tight text-[hsl(var(--brand-navy))] sm:text-[2rem]">
                         {group.title}
@@ -249,7 +249,9 @@ export function ResultsPage() {
                         <dt className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
                           Score
                         </dt>
-                        <dd className="text-sm font-bold text-[hsl(var(--brand-navy))]">{res.score}</dd>
+                        <dd className="min-w-0 break-words text-sm font-bold text-[hsl(var(--brand-navy))]">
+                          {res.score}
+                        </dd>
                       </div>
                       <div>
                         <dt className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
@@ -287,11 +289,11 @@ export function ResultsPage() {
           role="dialog"
           aria-modal="true"
           aria-label={activePoster.student_name}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/80 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/80 p-3 sm:p-4"
           onClick={() => setActivePoster(null)}
         >
           <div
-            className="surface relative w-full max-w-2xl p-3 sm:p-4"
+            className="surface relative max-h-[92dvh] w-full max-w-2xl overflow-y-auto p-3 sm:p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -308,7 +310,7 @@ export function ResultsPage() {
               fit="contain"
               variant="full"
               eager
-              className="mx-auto aspect-square max-h-[75vh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
+              className="mx-auto aspect-square max-h-[75dvh] w-full rounded-lg bg-[hsl(var(--brand-surface))]"
             />
             <p className="mt-2.5 px-1 text-sm font-semibold text-[hsl(var(--brand-navy))]">
               {activePoster.student_name} — {activePoster.score} ({activePoster.achievement_title})

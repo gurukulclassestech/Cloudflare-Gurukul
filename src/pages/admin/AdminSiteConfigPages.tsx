@@ -1550,7 +1550,7 @@ export function AdminNavigationPage() {
             No navigation links configured. Add a link above or click “Restore defaults”.
           </p>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[540px] text-left text-sm">
             <thead className="border-b border-[hsl(var(--border))] bg-[hsl(var(--brand-surface))] text-xs uppercase text-[hsl(var(--muted-foreground))]">
               <tr>
                 <th className="px-4 py-3">Label</th>
@@ -1967,9 +1967,9 @@ export function AdminHomepagePage() {
             return (
               <div
                 key={sec.id}
-                className="surface flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5"
+                className="surface flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:flex-nowrap sm:px-5"
               >
-                <div className="flex min-w-0 items-center gap-3.5">
+                <div className="flex min-w-0 flex-1 items-center gap-3.5">
                   <span className="w-5 shrink-0 text-right text-xs font-semibold text-slate-400 tabular-nums">
                     {idx + 1}
                   </span>
@@ -2090,11 +2090,11 @@ export function AdminHomepagePage() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/60 p-3 sm:p-4"
         >
           <form
             onSubmit={saveEdit}
-            className="surface max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6"
+            className="surface max-h-[90dvh] w-full max-w-2xl space-y-4 overflow-y-auto p-4 sm:p-6"
           >
             <div className="flex items-center justify-between border-b border-[hsl(var(--border))] pb-3">
               <h2 className="text-base font-bold text-[hsl(var(--brand-navy))]">

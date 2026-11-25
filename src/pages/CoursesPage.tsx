@@ -38,12 +38,12 @@ function CategorySection({
 }) {
   return (
     <section className="mt-14 first:mt-0">
-      <header className="relative overflow-hidden rounded-2xl border border-[hsl(var(--brand-navy))]/12 bg-white p-6 sm:p-8">
+      <header className="relative overflow-hidden rounded-2xl border border-[hsl(var(--brand-navy))]/12 bg-white p-5 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[hsl(var(--brand-navy))] text-base font-bold text-[#FFBE1B] tabular-nums">
             {String(index + 1).padStart(2, '0')}
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="eyebrow">Programme category</p>
             <h2 className="display-face mt-1.5 text-2xl leading-tight text-[hsl(var(--brand-navy))] sm:text-[2rem]">
               {title}

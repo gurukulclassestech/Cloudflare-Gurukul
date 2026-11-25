@@ -24,7 +24,10 @@ import {
   DEFAULT_RESULTS,
   DEFAULT_TESTIMONIALS,
   LATEST_UPLOADED_RESULTS,
+  NEET_UPLOADED_RESULTS,
+  PRIOR_RESULTS_BATCH_SYNC_KEYS,
   RESULTS_BATCH_SYNC_KEY,
+  getPendingResultPatch,
   resolveResultSection,
   sortResultSectionNames,
 } from '../../data/defaults';
@@ -567,6 +570,9 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
       );
 
       if (module === 'results' && !site.customized_modules?.includes(RESULTS_BATCH_SYNC_KEY)) {
+        const hasPriorSync = PRIOR_RESULTS_BATCH_SYNC_KEYS.some((k) =>
+          site.customized_modules?.includes(k)
+        );
         const existingIds = new Set(rows.map((r) => r.id));
         const existingNames = new Set(
           rows.map((r) => String(r.student_name || '').trim().toLowerCase())
@@ -575,12 +581,20 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
           (max, r) => Math.max(max, Number(r.display_order || 0)),
           0
         );
-        const missing = LATEST_UPLOADED_RESULTS.filter(
+        const missingJee = hasPriorSync
+          ? []
+          : LATEST_UPLOADED_RESULTS.filter(
+              (item) =>
+                !existingIds.has(item.id) &&
+                !existingNames.has(item.student_name.trim().toLowerCase())
+            );
+        const missingNeet = NEET_UPLOADED_RESULTS.filter(
           (item) =>
             !existingIds.has(item.id) &&
             !existingNames.has(item.student_name.trim().toLowerCase())
         );
-        const staleDocs = LATEST_UPLOADED_RESULTS.filter((item) => {
+        const missing = [...missingJee, ...missingNeet];
+        const staleDocs = [...LATEST_UPLOADED_RESULTS, ...NEET_UPLOADED_RESULTS].filter((item) => {
           const match = rows.find((r) => r.id === item.id);
           return (
             match &&
@@ -588,7 +602,23 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
               (typeof match.photo_url === 'string' && match.photo_url.includes('/assets/aistudio/')))
           );
         });
-        if (missing.length > 0 || staleDocs.length > 0) {
+        const recordPatches = rows
+          .map((r) => {
+            const patch = getPendingResultPatch({
+              id: r.id,
+              student_name: String(r.student_name || ''),
+              score: String(r.score || ''),
+              category: typeof r.category === 'string' ? r.category : '',
+              achievement_title: String(r.achievement_title || ''),
+              photo_url: typeof r.photo_url === 'string' ? r.photo_url : '',
+            });
+            return patch ? { id: r.id, patch } : null;
+          })
+          .filter(
+            (x): x is { id: string; patch: Record<string, string> } => x !== null
+          );
+
+        if (missing.length > 0 || staleDocs.length > 0 || recordPatches.length > 0) {
           for (let i = 0; i < missing.length; i++) {
             const rec = { ...missing[i], display_order: maxOrder + i + 1 };
             await setDocRecord(
@@ -603,11 +633,18 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
               photo_url: rec.photo_url,
             });
           }
+          for (const item of recordPatches) {
+            await updateDocRecord('results', item.id, item.patch);
+          }
           await markModuleCustomized(['results', RESULTS_BATCH_SYNC_KEY]);
           await logAdminActivity(
-            'create',
+            'update',
             'results',
-            `Synced JEE Advanced results section`
+            missingNeet.length > 0
+              ? 'Synced NEET AIIMS achiever results'
+              : recordPatches.length > 0
+                ? 'Updated IIT-JEE Reserved labels and result posters'
+                : 'Synced JEE Advanced results section'
           );
           rows = await fetchCollection<Record<string, unknown> & { id: string }>(
             cfg.collection,
@@ -1042,7 +1079,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                   key={secName}
                   className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-[hsl(var(--brand-navy))] text-xs font-bold text-[#FFBE1B] tabular-nums">
                       {String(sIdx + 1).padStart(2, '0')}
                     </span>
@@ -1098,7 +1135,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
       )}
 
       <div className="surface flex flex-wrap items-center gap-3 p-3">
-        <div className="relative min-w-[220px] flex-1 max-w-sm">
+        <div className="relative w-full min-w-0 flex-1 sm:min-w-[220px] sm:max-w-sm">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[hsl(var(--muted-foreground))]"
             aria-hidden="true"
@@ -1152,7 +1189,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
               return (
                 <div
                   key={item.id}
-                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     {supportsOrder && search.trim() === '' ? (
@@ -1239,7 +1276,7 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex flex-wrap shrink-0 items-center gap-2">
                     <button
                       type="button"
                       role="switch"
@@ -1344,11 +1381,11 @@ export function AdminCrudPage({ module }: { module: CrudModuleKey }) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/60 p-3 sm:p-4"
         >
           <form
             onSubmit={handleSave}
-            className="surface max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6"
+            className="surface max-h-[90dvh] w-full max-w-2xl space-y-4 overflow-y-auto p-4 sm:p-6"
           >
             <div className="flex items-center justify-between border-b border-[hsl(var(--border))] pb-3">
               <h2 className="text-base font-bold text-[hsl(var(--brand-navy))]">

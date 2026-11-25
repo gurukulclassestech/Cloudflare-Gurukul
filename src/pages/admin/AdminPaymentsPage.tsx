@@ -403,11 +403,11 @@ export function AdminPaymentsPage() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1D40]/60 p-3 sm:p-4"
         >
           <form
             onSubmit={handleSave}
-            className="surface max-h-[90vh] w-full max-w-xl space-y-4 overflow-y-auto p-6"
+            className="surface max-h-[90dvh] w-full max-w-xl space-y-4 overflow-y-auto p-4 sm:p-6"
           >
             <div className="flex items-center justify-between border-b border-[hsl(var(--border))] pb-3">
               <h2 className="text-base font-bold text-[hsl(var(--brand-navy))]">

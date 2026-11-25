@@ -39,7 +39,7 @@ export function ContactPage() {
       />
 
       <section className="shell grid gap-8 py-12 sm:py-16 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-        <div>
+        <div className="min-w-0">
           <div className="grid gap-3 sm:grid-cols-2">
             {infoCards.map(({ icon: Icon, label, value, href }) => (
               <div key={label} className="surface p-4">
@@ -90,12 +90,12 @@ export function ContactPage() {
               <iframe
                 src={site.map_embed_url}
                 title="Institute location map"
-                className="h-[300px] w-full"
+                className="h-[240px] w-full sm:h-[300px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
             ) : (
-              <div className="flex h-[300px] flex-col items-center justify-center gap-2 bg-[hsl(var(--brand-surface))] p-8 text-center">
+              <div className="flex h-[240px] flex-col items-center justify-center gap-2 bg-[hsl(var(--brand-surface))] p-6 text-center sm:h-[300px] sm:p-8">
                 <MapPin className="h-7 w-7 text-[hsl(var(--brand-navy))]/45" aria-hidden="true" />
                 <p className="text-sm font-semibold text-[hsl(var(--brand-navy))]">
                   {site.address}
@@ -108,7 +108,7 @@ export function ContactPage() {
           </div>
         </div>
 
-        <div className="surface p-5 sm:p-7">
+        <div className="surface min-w-0 p-5 sm:p-7">
           <h2 className="text-lg font-bold text-[hsl(var(--brand-navy))]">
             {pt.secondary_title || 'Send an enquiry'}
           </h2>
